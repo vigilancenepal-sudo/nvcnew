@@ -1,0 +1,278 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'vigilancenepal@gmail.com';
+    }
+
+    function hasActiveProfile() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function currentUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        currentUserDoc().role == 'admin' &&
+        currentUserDoc().status == 'active'
+      );
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'email', 'fullName', 'designation', 'role',
+          'mahashakhaId', 'shakhaId', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid', 'email', 'fullName', 'designation', 'role',
+          'mahashakhaId', 'shakhaId', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 120 &&
+        data.designation is string && data.designation.size() >= 1 && data.designation.size() <= 120 &&
+        data.role is string && data.role.size() <= 20 && data.role in ['admin', 'mahashakha', 'shakha'] &&
+        data.mahashakhaId is string && data.mahashakhaId.size() <= 64 &&
+        data.shakhaId is string && data.shakhaId.size() <= 64 &&
+        data.status is string && data.status.size() <= 20 && data.status in ['active', 'inactive'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidComplaint(data) {
+      return data.keys().hasAll([
+          'dartaNo', 'title', 'complainant', 'source', 'ministry', 'nature',
+          'status', 'districtEn', 'fiscalYear', 'monthIndex', 'nepaliDate',
+          'mahashakhaId', 'shakhaId', 'createdByUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'dartaNo', 'title', 'complainant', 'source', 'ministry', 'nature',
+          'status', 'districtEn', 'fiscalYear', 'monthIndex', 'nepaliDate',
+          'mahashakhaId', 'shakhaId', 'createdByUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.dartaNo is string && data.dartaNo.size() >= 1 && data.dartaNo.size() <= 50 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 240 &&
+        data.complainant is string && data.complainant.size() >= 1 && data.complainant.size() <= 120 &&
+        data.source is string && data.source.size() <= 32 && data.source in ['hello_sarkar', 'online', 'hotline', 'kendra_darta'] &&
+        data.ministry is string && data.ministry.size() >= 1 && data.ministry.size() <= 140 &&
+        data.nature is string && data.nature.size() >= 1 && data.nature.size() <= 100 &&
+        data.status is string && data.status.size() <= 32 && data.status in ['chalu', 'farchhaut', 'patrachar_baki', 'chhanbin_ma', 'kam_baki'] &&
+        data.districtEn is string && data.districtEn.size() >= 2 && data.districtEn.size() <= 64 &&
+        data.fiscalYear is string && data.fiscalYear.size() <= 16 && data.fiscalYear in ['2083/84', '2082/83', '2081/82'] &&
+        data.monthIndex is int && data.monthIndex >= 1 && data.monthIndex <= 12 &&
+        data.nepaliDate is string && data.nepaliDate.size() >= 4 && data.nepaliDate.size() <= 32 &&
+        data.mahashakhaId is string && data.mahashakhaId.size() >= 1 && data.mahashakhaId.size() <= 64 &&
+        data.shakhaId is string && data.shakhaId.size() >= 1 && data.shakhaId.size() <= 64 &&
+        data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128 && data.createdByUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidActivityRecord(data) {
+      return data.keys().hasAll([
+          'refNo', 'activityType', 'title', 'entityName', 'districtEn',
+          'fiscalYear', 'monthIndex', 'nepaliDate', 'nonComplianceCount',
+          'directiveCount', 'status', 'mahashakhaId', 'shakhaId',
+          'createdByUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'refNo', 'activityType', 'title', 'entityName', 'districtEn',
+          'fiscalYear', 'monthIndex', 'nepaliDate', 'nonComplianceCount',
+          'directiveCount', 'status', 'mahashakhaId', 'shakhaId',
+          'createdByUid', 'createdAt', 'updatedAt'
+        ]) &&
+        data.refNo is string && data.refNo.size() >= 1 && data.refNo.size() <= 50 &&
+        data.activityType is string && data.activityType.size() <= 40 && data.activityType in [
+          'karyalaya_anugaman', 'badapatra_anugaman', 'chhanbin_anveshan',
+          'prabidhik_parikshan', 'aayojana_anugaman', 'namuna_parikshan',
+          'prabardhanatmak', 'suchana_prakashan'
+        ] &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 240 &&
+        data.entityName is string && data.entityName.size() >= 1 && data.entityName.size() <= 160 &&
+        data.districtEn is string && data.districtEn.size() >= 2 && data.districtEn.size() <= 64 &&
+        data.fiscalYear is string && data.fiscalYear.size() <= 16 && data.fiscalYear in ['2083/84', '2082/83', '2081/82'] &&
+        data.monthIndex is int && data.monthIndex >= 1 && data.monthIndex <= 12 &&
+        data.nepaliDate is string && data.nepaliDate.size() >= 4 && data.nepaliDate.size() <= 32 &&
+        data.nonComplianceCount is int && data.nonComplianceCount >= 0 && data.nonComplianceCount <= 10000 &&
+        data.directiveCount is int && data.directiveCount >= 0 && data.directiveCount <= 10000 &&
+        data.status is string && data.status.size() <= 32 && data.status in ['sampanna', 'chalu', 'pratibedan_pesh'] &&
+        data.mahashakhaId is string && data.mahashakhaId.size() >= 1 && data.mahashakhaId.size() <= 64 &&
+        data.shakhaId is string && data.shakhaId.size() >= 1 && data.shakhaId.size() <= 64 &&
+        data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128 && data.createdByUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 4. Collection: /users/{userId} (PII Isolated to Owner or Admin, Zero get() in allow list)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (existing().uid == request.auth.uid || isBootstrappedAdmin() || isAdmin());
+
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().email == request.auth.token.email &&
+            incoming().role == 'shakha' &&
+            incoming().status == 'active'
+          )
+        );
+
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'designation', 'role', 'mahashakhaId', 'shakhaId', 'status', 'email', 'updatedAt'
+          ])) ||
+          (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'designation', 'updatedAt'
+          ]))
+        );
+
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // 5. Collection: /complaints/{complaintId}
+    match /complaints/{complaintId} {
+      allow get: if isValidId(complaintId) && isSignedIn() && (
+        isAdmin() ||
+        (hasActiveProfile() && currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
+        (hasActiveProfile() && currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
+      );
+
+      // Zero get()/exists() in allow list per Pillar 8 Cost-Optimization Clause; relational check on resource.data
+      allow list: if isSignedIn() && (
+        isBootstrappedAdmin() ||
+        existing().createdByUid == request.auth.uid ||
+        existing().mahashakhaId in ['maha_admin', 'maha_tech', 'maha_police']
+      );
+
+      allow create: if isVerifiedUser() &&
+        isValidId(complaintId) &&
+        isValidComplaint(incoming()) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (hasActiveProfile() && currentUserDoc().role == 'mahashakha' && incoming().mahashakhaId == currentUserDoc().mahashakhaId) ||
+          (hasActiveProfile() && currentUserDoc().role == 'shakha' && incoming().shakhaId == currentUserDoc().shakhaId)
+        );
+
+      allow update: if isVerifiedUser() &&
+        isValidId(complaintId) &&
+        isValidComplaint(incoming()) &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'complainant', 'source', 'ministry', 'nature', 'status',
+            'districtEn', 'fiscalYear', 'monthIndex', 'nepaliDate',
+            'mahashakhaId', 'shakhaId', 'updatedAt'
+          ])) ||
+          (
+            existing().status != 'farchhaut' &&
+            hasActiveProfile() && (
+              (currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
+              (currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
+            ) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'title', 'ministry', 'nature', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(complaintId) && isAdmin();
+    }
+
+    // 6. Collection: /activities/{activityId}
+    match /activities/{activityId} {
+      allow get: if isValidId(activityId) && isSignedIn() && (
+        isAdmin() ||
+        (hasActiveProfile() && currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
+        (hasActiveProfile() && currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
+      );
+
+      allow list: if isSignedIn() && (
+        isBootstrappedAdmin() ||
+        existing().createdByUid == request.auth.uid ||
+        existing().mahashakhaId in ['maha_admin', 'maha_tech', 'maha_police']
+      );
+
+      allow create: if isVerifiedUser() &&
+        isValidId(activityId) &&
+        isValidActivityRecord(incoming()) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (hasActiveProfile() && currentUserDoc().role == 'mahashakha' && incoming().mahashakhaId == currentUserDoc().mahashakhaId) ||
+          (hasActiveProfile() && currentUserDoc().role == 'shakha' && incoming().shakhaId == currentUserDoc().shakhaId)
+        );
+
+      allow update: if isVerifiedUser() &&
+        isValidId(activityId) &&
+        isValidActivityRecord(incoming()) &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'entityName', 'districtEn', 'nonComplianceCount',
+            'directiveCount', 'status', 'mahashakhaId', 'shakhaId', 'updatedAt'
+          ])) ||
+          (
+            existing().status != 'sampanna' &&
+            hasActiveProfile() && (
+              (currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
+              (currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
+            ) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'nonComplianceCount', 'directiveCount', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(activityId) && isAdmin();
+    }
+  }
+}
