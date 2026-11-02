@@ -11,12 +11,19 @@ import { db, OperationType, handleFirestoreError } from '../firebase';
 import {
   ComplaintSource,
   ComplaintStatus,
+  ComplaintPriority,
   FiscalYear,
   MahashakhaId,
   ShakhaId,
   ActivityType,
 } from '../types/nvc';
-import { DISTRICT_NE_MAP, MINISTRIES_LIST, COMPLAINT_NATURES } from './nvcStructure';
+import {
+  DISTRICT_NE_MAP,
+  MINISTRIES_LIST,
+  COMPLAINT_NATURES,
+  getProvinceForDistrict,
+  getLocalLevelsForDistrict,
+} from './nvcStructure';
 
 const ALL_DISTRICTS = Object.keys(DISTRICT_NE_MAP);
 
@@ -24,11 +31,18 @@ interface SeedComplaintInput {
   dartaNo: string;
   title: string;
   complainant: string;
+  respondent: string;
   source: ComplaintSource;
   ministry: string;
   nature: string;
   status: ComplaintStatus;
+  priority: ComplaintPriority;
+  province: string;
   districtEn: string;
+  localLevel: string;
+  committeeDecision: string;
+  finalDecision: string;
+  remarks: string;
   fiscalYear: FiscalYear;
   monthIndex: number;
   nepaliDate: string;
@@ -38,184 +52,180 @@ interface SeedComplaintInput {
 
 const REALISTIC_COMPLAINTS: SeedComplaintInput[] = [
   {
-    dartaNo: 'NVC-२०८३-०१४८',
-    title: 'नारायणगढ–बुटवल सडक खण्डको कालोपत्रे निर्माण गुणस्तरहीन भएको सम्बन्धमा',
-    complainant: 'स्थानीय उपभोक्ता सरोकार समिति, नवलपुर',
-    source: 'online',
-    ministry: 'भौतिक पूर्वाधार तथा यातायात मन्त्रालय',
-    nature: 'निर्माण गुणस्तरहीन / प्राविधिक त्रुटि',
-    status: 'chhanbin_ma',
-    districtEn: 'Nawalparasi East',
-    fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-१४',
-    mahashakhaId: 'maha_tech',
-    shakhaId: 'shakha_tech_investigation',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१४७',
-    title: 'मालपोत कार्यालय डिल्लीबजारमा जग्गा नामसारी सेवामा अनावश्यक ढिलासुस्ती',
-    complainant: 'रामप्रसाद अधिकारी',
-    source: 'hello_sarkar',
-    ministry: 'भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय',
+    dartaNo: '१९३४/२०८३-१-६',
+    title: 'बारा जिल्ला कलैया उपमहानगरपालिका-२० स्थित श्री नेपाल राष्ट्रिय माध्यमिक विद्यालय बसतपुरका प्रधानाध्यापक राम उदार साह तेलीको जन्ममिति संशोधन गरी सेवा अवधि बढाइ लिएको तलब सुविधा रोक्का गरी कारबाही गर्ने सम्बन्धमा।',
+    complainant: 'मृत्युंजय कुमार सिंह',
+    respondent: 'श्री नेपाल राष्ट्रिय मा.वि. बसतपुर',
+    source: 'kendra_darta',
+    ministry: 'शिक्षा, विज्ञान तथा प्रविधि मन्त्रालय',
     nature: 'सेवा प्रवाहमा ढिलासुस्ती',
-    status: 'chalu',
-    districtEn: 'Kathmandu',
+    status: 'kam_baki',
+    priority: 'मध्यम',
+    province: 'मधेश प्रदेश',
+    districtEn: 'Bara',
+    localLevel: 'कलैया उपमहानगरपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा आवश्यक छानविन गरी १५ दिनभित्र राय प्रतिक्रिया उपलब्ध गराउन लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
     fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-१३',
+    monthIndex: 6,
+    nepaliDate: '२०८३-०६-२६',
     mahashakhaId: 'maha_admin',
     shakhaId: 'shakha_info_complaint',
   },
   {
-    dartaNo: 'NVC-२०८३-०१४६',
-    title: 'यातायात व्यवस्था कार्यालय एकान्तकुनामा नागरिक बडापत्र अद्यावधिक नगरिएको',
-    complainant: 'सुनिता श्रेष्ठ',
-    source: 'hotline',
-    ministry: 'भौतिक पूर्वाधार तथा यातायात मन्त्रालय',
-    nature: 'नागरिक बडापत्र कार्यान्वयन अभाव',
-    status: 'patrachar_baki',
-    districtEn: 'Lalitpur',
-    fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-१२',
-    mahashakhaId: 'maha_admin',
-    shakhaId: 'shakha_admin_plan',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१४५',
-    title: 'भेरी–बबई डाइभर्सन बहुउद्देश्यीय आयोजनाको कङ्क्रिट नमूना परीक्षण सम्बन्धी',
-    complainant: 'सिँचाइ डिभिजन प्राविधिक अनुगमन टोली',
+    dartaNo: '३१७७/२०८३-६-२१',
+    title: 'सिरहा जिल्ला सुखिपुर नगरपालिका-९ स्थित श्री आ.वि. बैशाखामा कार्यरत शिक्षक पतिराम यादवलाई शिक्षा नियमावली विपरित पद/तह नमिल्ने गरी सरुवा गरिएको विषय।',
+    complainant: 'पतिराम यादव (नि.मा.शि. द्वितिय श्रेणी)',
+    respondent: 'सुखिपुर नगरपालिका',
     source: 'kendra_darta',
-    ministry: 'ऊर्जा, जलस्रोत तथा सिँचाइ मन्त्रालय',
-    nature: 'निर्माण गुणस्तरहीन / प्राविधिक त्रुटि',
-    status: 'chalu',
-    districtEn: 'Surkhet',
+    ministry: 'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
+    nature: 'सेवा प्रवाहमा ढिलासुस्ती',
+    status: 'kam_baki',
+    priority: 'मध्यम',
+    province: 'मधेश प्रदेश',
+    districtEn: 'Siraha',
+    localLevel: 'सुखिपुर नगरपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा के भएको हो, राय/प्रतिकृया १५ दिनभित्र उपलब्ध गराउन सुखिपुर नगरपालिकालाई लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
     fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-११',
-    mahashakhaId: 'maha_tech',
-    shakhaId: 'shakha_lab_testing',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१४४',
-    title: 'प्रादेशिक अस्पताल जनकपुरको स्वास्थ्य उपकरण खरिद बोलपत्रमा अनियमितता',
-    complainant: 'जनकपुर नागरिक समाज',
-    source: 'online',
-    ministry: 'स्वास्थ्य तथा जनसङ्ख्या मन्त्रालय',
-    nature: 'सार्वजनिक खरिद तथा ठेक्का अनियमितता',
-    status: 'chhanbin_ma',
-    districtEn: 'Dhanusha',
-    fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-०९',
+    monthIndex: 6,
+    nepaliDate: '२०८३-०६-२१',
     mahashakhaId: 'maha_admin',
-    shakhaId: 'shakha_investigation',
+    shakhaId: 'shakha_info_complaint',
   },
   {
-    dartaNo: 'NVC-२०८३-०१४३',
-    title: 'सार्वजनिक जग्गा अतिक्रमण गरी व्यावसायिक संरचना निर्माण गरिएको उजुरी',
-    complainant: 'पोखरा महानगर वडा नं. ८ बासी',
-    source: 'kendra_darta',
-    ministry: 'सहरी विकास मन्त्रालय',
-    nature: 'सरकारी जग्गा तथा सार्वजनिक सम्पत्ति अतिक्रमण',
-    status: 'chalu',
-    districtEn: 'Kaski',
-    fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-०८',
-    mahashakhaId: 'maha_police',
-    shakhaId: 'shakha_police',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१४२',
-    title: 'सरकारी कर्मचारीहरूको निर्धारित पोशाक तथा कार्यालय हाजिरी छड्के जाँच',
-    complainant: 'केन्द्रीय छड्के अनुगमन टोली',
+    dartaNo: '१२४/२०८३-४-५',
+    title: 'सोनु कुमार सोनीको हालसम्म काज फिर्ता नगरिएको विषय।',
+    complainant: 'बेनामी',
+    respondent: '-',
     source: 'hotline',
     ministry: 'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
     nature: 'कार्यालय समय र पोशाक अपरिपालना',
-    status: 'farchhaut',
-    districtEn: 'Bhaktapur',
-    fiscalYear: '2083/84',
-    monthIndex: 7,
-    nepaliDate: '२०८३-०७-०६',
-    mahashakhaId: 'maha_police',
-    shakhaId: 'shakha_police',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१४१',
-    title: 'सार्वजनिक पद धारण गरेका पदाधिकारीको वार्षिक सम्पत्ति विवरण बुझाउन ढिलाइ',
-    complainant: 'अभिलेख सुपरीवेक्षण इकाई',
-    source: 'kendra_darta',
-    ministry: 'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
-    nature: 'गैरकानूनी सम्पत्ति आर्जन / आर्थिक अनियमितता',
     status: 'kam_baki',
-    districtEn: 'Morang',
+    priority: 'सामान्य',
+    province: 'बागमती प्रदेश',
+    districtEn: 'Kathmandu',
+    localLevel: 'काठमाडौँ महानगरपालिका',
+    committeeDecision: 'यस सम्बन्धमा निर्णय भई कार्यान्वयनमा गइसकेकाले सोही फाइलमा समावेश गर्ने।',
+    finalDecision: '-',
+    remarks: '-',
     fiscalYear: '2083/84',
     monthIndex: 6,
-    nepaliDate: '२०८३-०६-२७',
+    nepaliDate: '२०८३-०६-१९',
     mahashakhaId: 'maha_admin',
-    shakhaId: 'shakha_property',
+    shakhaId: 'shakha_info_complaint',
   },
   {
-    dartaNo: 'NVC-२०८३-०१४०',
-    title: 'रानी जमरा कुलरिया सिँचाइ आयोजनाको नहर लाइनिङ प्राविधिक परीक्षण माग',
-    complainant: 'जल उपभोक्ता महासंघ, कैलाली',
-    source: 'online',
-    ministry: 'ऊर्जा, जलस्रोत तथा सिँचाइ मन्त्रालय',
-    nature: 'निर्माण गुणस्तरहीन / प्राविधिक त्रुटि',
-    status: 'farchhaut',
-    districtEn: 'Kailali',
-    fiscalYear: '2083/84',
-    monthIndex: 6,
-    nepaliDate: '२०८३-०६-२२',
-    mahashakhaId: 'maha_tech',
-    shakhaId: 'shakha_tech_audit',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१३९',
-    title: 'वीरगञ्ज भन्सार र सुख्खा बन्दरगाह पहुँच मार्ग मर्मत ठेक्का छानविन',
-    complainant: 'ढुवानी व्यवसायी संघ, पर्सा',
+    dartaNo: '६७९३/२०८३-३-१६',
+    title: 'आर्थिक वर्षको क्लोजिङ अगाडि इलाम अस्पतालको पेमेन्ट पश्चात कमिशन उठाउने कार्य भएको सम्बन्धमा छानविन गरी पाउँ।',
+    complainant: 'Hs-WEB-147806-DM',
+    respondent: 'इलाम अस्पताल',
     source: 'hello_sarkar',
-    ministry: 'अर्थ मन्त्रालय',
+    ministry: 'स्वास्थ्य तथा जनसङ्ख्या मन्त्रालय',
     nature: 'सार्वजनिक खरिद तथा ठेक्का अनियमितता',
-    status: 'farchhaut',
-    districtEn: 'Parsa',
+    status: 'kam_baki',
+    priority: 'मध्यम',
+    province: 'कोशी प्रदेश',
+    districtEn: 'Ilam',
+    localLevel: 'इलाम नगरपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा के भएको हो, राय/प्रतिकृया १५ दिनभित्र उपलब्ध गराउन इलाम अस्पताललाई लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
     fiscalYear: '2083/84',
     monthIndex: 6,
-    nepaliDate: '२०८३-०६-१८',
+    nepaliDate: '२०८३-०६-१९',
     mahashakhaId: 'maha_admin',
-    shakhaId: 'shakha_legal',
+    shakhaId: 'shakha_info_complaint',
   },
   {
-    dartaNo: 'NVC-२०८३-०१३८',
-    title: 'एकीकृत खानेपानी तथा ढल निकास आयोजना बुटवलको पाइपलाइन गुणस्तर सम्बन्धी',
-    complainant: 'टोल विकास संस्था, रुपन्देही',
+    dartaNo: '२७२/२०८३/४/७',
+    title: 'सप्तरी जिल्लाको तिलाठी कोईलाडी गाउँपालिकामा इन्धन, न्यायिक समितिको सफ्टवेयर, मसलन्द तथा कार्यालय सामग्री खरिदमा अनियमितता गरेको।',
+    complainant: 'बेनामी',
+    respondent: 'अध्यक्ष, प्रमुख प्रशासकीय अधिकृत र लेखापाल',
     source: 'online',
-    ministry: 'खानेपानी मन्त्रालय',
+    ministry: 'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
+    nature: 'सार्वजनिक खरिद तथा ठेक्का अनियमितता',
+    status: 'kam_baki',
+    priority: 'उच्च',
+    province: 'मधेश प्रदेश',
+    districtEn: 'Saptari',
+    localLevel: 'तिलाठी कोईलाडी गाउँपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा के भएको हो, राय/प्रतिकृयासहित सम्बद्ध कागजात १५ दिनभित्र उपलब्ध गराउन तिलाठी कोईलाडी गाउँपालिकालाई लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
+    fiscalYear: '2083/84',
+    monthIndex: 6,
+    nepaliDate: '२०८३-०६-१९',
+    mahashakhaId: 'maha_admin',
+    shakhaId: 'shakha_info_complaint',
+  },
+  {
+    dartaNo: '२८५४/२०८३-६-१२',
+    title: 'काठमाडौँ जिल्ला कीर्तिपुर नगरपालिका वडा नं १ चक्रपथ ट्रयाक रोडमा परेको सर्वोच्च अदालतको फैसला कार्यान्वयन नगरेको सम्बन्धमा।',
+    complainant: 'राम कुमार रिजाल',
+    respondent: 'भूमि प्रशासन विभाग, मालपोत कार्यालय कलंकी समेत',
+    source: 'kendra_darta',
+    ministry: 'भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय',
+    nature: 'सेवा प्रवाहमा ढिलासुस्ती',
+    status: 'kam_baki',
+    priority: 'मध्यम',
+    province: 'बागमती प्रदेश',
+    districtEn: 'Kathmandu',
+    localLevel: 'कीर्तिपुर नगरपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा के भएको हो, राय/प्रतिकृया १५ दिनभित्र उपलब्ध गराउन भूमि व्यवस्थापन तथा अभिलेख विभागलाई लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
+    fiscalYear: '2083/84',
+    monthIndex: 6,
+    nepaliDate: '२०८३-०६-१२',
+    mahashakhaId: 'maha_admin',
+    shakhaId: 'shakha_info_complaint',
+  },
+  {
+    dartaNo: '२६७१/२०८३-६-६',
+    title: 'पाँचथर जिल्ला फिदिम नगरपालिकामा नक्सा स्वीकृत नगराई निर्माण भइरहेको भवन संरचना रोक्का आदेश कार्यान्वयन नभएको विषय।',
+    complainant: 'सहदेव आचार्य',
+    respondent: 'फिदिम नगरपालिका',
+    source: 'online',
+    ministry: 'सहरी विकास मन्त्रालय',
     nature: 'निर्माण गुणस्तरहीन / प्राविधिक त्रुटि',
-    status: 'chalu',
-    districtEn: 'Rupandehi',
+    status: 'kam_baki',
+    priority: 'मध्यम',
+    province: 'कोशी प्रदेश',
+    districtEn: 'Panchthar',
+    localLevel: 'फिदिम नगरपालिका',
+    committeeDecision: 'प्रस्तुत उजुरीका सम्बन्धमा के भएको हो, राय/प्रतिकृया १५ दिनभित्र उपलब्ध गराउन फिदिम नगरपालिकालाई लेखिपठाउने।',
+    finalDecision: '-',
+    remarks: '-',
+    fiscalYear: '2083/84',
+    monthIndex: 6,
+    nepaliDate: '२०८३-०६-०६',
+    mahashakhaId: 'maha_tech',
+    shakhaId: 'shakha_tech_investigation',
+  },
+  {
+    dartaNo: '२१८१/२०८३-५-२४',
+    title: 'रामस्वरूप रामसागर बहुमुखी क्याम्पस जनकपुरधाममा भौतिक निर्माण, शैक्षिक सामग्री खरिद तथा ठेक्कापट्टामा अनियमितता भएको सम्बन्धमा।',
+    complainant: 'HS-WEB-183085-XM',
+    respondent: 'विजय प्रसाद शर्मा',
+    source: 'hello_sarkar',
+    ministry: 'शिक्षा, विज्ञान तथा प्रविधि मन्त्रालय',
+    nature: 'सार्वजनिक खरिद तथा ठेक्का अनियमितता',
+    status: 'chhanbin_ma',
+    priority: 'उच्च',
+    province: 'मधेश प्रदेश',
+    districtEn: 'Dhanusha',
+    localLevel: 'जनकपुरधाम उपमहानगरपालिका',
+    committeeDecision: 'छानविन टोली खटाई विस्तृत प्रतिवेदन पेश गर्ने।',
+    finalDecision: '-',
+    remarks: 'जरुरी छानविन',
     fiscalYear: '2083/84',
     monthIndex: 5,
     nepaliDate: '२०८३-०५-२४',
-    mahashakhaId: 'maha_tech',
-    shakhaId: 'shakha_tech_audit',
-  },
-  {
-    dartaNo: 'NVC-२०८३-०१३७',
-    title: 'केन्द्रीय निर्णय कार्यान्वयनको प्रगति विवरण पठाउन अटेर गरेको सम्बन्धमा',
-    complainant: 'अनुगमन शाखा प्रतिवेदन',
-    source: 'kendra_darta',
-    ministry: 'गृह मन्त्रालय',
-    nature: 'सेवा प्रवाहमा ढिलासुस्ती',
-    status: 'patrachar_baki',
-    districtEn: 'Chitawan',
-    fiscalYear: '2083/84',
-    monthIndex: 5,
-    nepaliDate: '२०८३-०५-१५',
     mahashakhaId: 'maha_admin',
-    shakhaId: 'shakha_decision_archive',
+    shakhaId: 'shakha_investigation',
   },
 ];
 
@@ -248,9 +258,9 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
   try {
     const batch = writeBatch(db);
     const sources: ComplaintSource[] = ['hello_sarkar', 'online', 'hotline', 'kendra_darta'];
-    const statuses: ComplaintStatus[] = ['chalu', 'farchhaut', 'patrachar_baki', 'chhanbin_ma', 'kam_baki'];
+    const statuses: ComplaintStatus[] = ['kam_baki', 'chalu', 'farchhaut', 'patrachar_baki', 'chhanbin_ma'];
+    const priorities: ComplaintPriority[] = ['मध्यम', 'उच्च', 'सामान्य'];
 
-    // 1. Add the 12 curated realistic complaints first
     REALISTIC_COMPLAINTS.forEach((item, idx) => {
       const id = `cmp_curated_${String(idx + 1).padStart(3, '0')}`;
       batch.set(doc(db, 'complaints', id), {
@@ -261,11 +271,12 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
       });
     });
 
-    // 2. Add distributed complaints across Nepal's 77 districts & fiscal years (2083/84 & 2082/83)
     for (let i = 0; i < 84; i++) {
       const id = `cmp_dist_${String(i + 1).padStart(3, '0')}`;
       const districtEn = ALL_DISTRICTS[i % ALL_DISTRICTS.length];
       const districtNe = DISTRICT_NE_MAP[districtEn] || districtEn;
+      const province = getProvinceForDistrict(districtEn);
+      const localLevel = getLocalLevelsForDistrict(districtEn)[0];
       const unit = SHAKHA_ROTATION[i % SHAKHA_ROTATION.length];
       const fiscalYear: FiscalYear = i < 62 ? '2083/84' : '2082/83';
       const monthIndex = fiscalYear === '2083/84' ? (i % 7) + 1 : (i % 12) + 1;
@@ -275,16 +286,27 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
       const ministry = MINISTRIES_LIST[i % MINISTRIES_LIST.length];
       const source = sources[i % sources.length];
       const status = statuses[i % statuses.length];
+      const priority = priorities[i % priorities.length];
 
       batch.set(doc(db, 'complaints', id), {
-        dartaNo: `NVC-${fyPrefix}-०${100 + i}`,
-        title: `${districtNe} जिल्ला अन्तर्गत ${nature} सम्बन्धी उजुरी छानविन`,
-        complainant: `नागरिक निवेदक समूह, ${districtNe}`,
+        dartaNo: `${1100 + i}/${fyPrefix}-${monthIndex}-${day}`,
+        title: `${districtNe} जिल्ला ${localLevel} अन्तर्गत ${nature} सम्बन्धमा छानविन तथा आवश्यक कारबाही गरिपाउँ।`,
+        complainant: i % 4 === 0 ? 'बेनामी' : `नागरिक निवेदक समूह, ${districtNe}`,
+        respondent: `${localLevel} को कार्यालय`,
         source,
         ministry,
         nature,
         status,
+        priority,
+        province,
         districtEn,
+        localLevel,
+        committeeDecision:
+          status === 'farchhaut'
+            ? 'छानविन सम्पन्न भई आवश्यक निर्देशन पठाइएकोले तामेलीमा राख्ने।'
+            : 'प्रस्तुत उजुरीका सम्बन्धमा १५ दिनभित्र राय प्रतिक्रिया माग गर्ने।',
+        finalDecision: status === 'farchhaut' ? 'फर्छ्यौट / तामेली' : '-',
+        remarks: '-',
         fiscalYear,
         monthIndex,
         nepaliDate: `${fyPrefix}-${String(monthIndex).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
@@ -296,7 +318,6 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
       });
     }
 
-    // 3. Add Activity Records (Office monitoring, Investigations, Technical Audits, Project Monitoring, Lab Samples)
     const activityTypes: ActivityType[] = [
       'karyalaya_anugaman',
       'prabidhik_parikshan',

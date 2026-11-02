@@ -83,18 +83,35 @@ service cloud.firestore {
           'mahashakhaId', 'shakhaId', 'createdByUid', 'createdAt', 'updatedAt'
         ]) &&
         data.keys().hasOnly([
-          'dartaNo', 'title', 'complainant', 'source', 'ministry', 'nature',
-          'status', 'districtEn', 'fiscalYear', 'monthIndex', 'nepaliDate',
+          'dartaNo', 'title', 'complainant', 'complainantContact', 'respondent', 'source', 'ministry', 'nature',
+          'status', 'priority', 'province', 'districtEn', 'localLevel',
+          'committeeDecision', 'finalDecision', 'finalDecisionType', 'finalDecisionDate',
+          'implementationInfoDate', 'investigationOfficer', 'patracharChalaniNo', 'progressNote', 'remarks',
+          'fiscalYear', 'monthIndex', 'nepaliDate',
           'mahashakhaId', 'shakhaId', 'createdByUid', 'createdAt', 'updatedAt'
         ]) &&
-        data.dartaNo is string && data.dartaNo.size() >= 1 && data.dartaNo.size() <= 50 &&
-        data.title is string && data.title.size() >= 2 && data.title.size() <= 240 &&
-        data.complainant is string && data.complainant.size() >= 1 && data.complainant.size() <= 120 &&
+        data.dartaNo is string && data.dartaNo.size() >= 1 && data.dartaNo.size() <= 80 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 1500 &&
+        data.complainant is string && data.complainant.size() >= 1 && data.complainant.size() <= 200 &&
+        (!('complainantContact' in data) || (data.complainantContact is string && data.complainantContact.size() <= 120)) &&
+        (!('respondent' in data) || (data.respondent is string && data.respondent.size() <= 240)) &&
         data.source is string && data.source.size() <= 32 && data.source in ['hello_sarkar', 'online', 'hotline', 'kendra_darta'] &&
-        data.ministry is string && data.ministry.size() >= 1 && data.ministry.size() <= 140 &&
-        data.nature is string && data.nature.size() >= 1 && data.nature.size() <= 100 &&
+        data.ministry is string && data.ministry.size() <= 160 &&
+        data.nature is string && data.nature.size() >= 1 && data.nature.size() <= 120 &&
         data.status is string && data.status.size() <= 32 && data.status in ['chalu', 'farchhaut', 'patrachar_baki', 'chhanbin_ma', 'kam_baki'] &&
+        (!('priority' in data) || (data.priority is string && data.priority.size() <= 24 && data.priority in ['उच्च', 'मध्यम', 'सामान्य'])) &&
+        (!('province' in data) || (data.province is string && data.province.size() <= 80)) &&
         data.districtEn is string && data.districtEn.size() >= 2 && data.districtEn.size() <= 64 &&
+        (!('localLevel' in data) || (data.localLevel is string && data.localLevel.size() <= 140)) &&
+        (!('committeeDecision' in data) || (data.committeeDecision is string && data.committeeDecision.size() <= 1000)) &&
+        (!('finalDecision' in data) || (data.finalDecision is string && data.finalDecision.size() <= 500)) &&
+        (!('finalDecisionType' in data) || (data.finalDecisionType is string && data.finalDecisionType.size() <= 160)) &&
+        (!('finalDecisionDate' in data) || (data.finalDecisionDate is string && data.finalDecisionDate.size() <= 32)) &&
+        (!('implementationInfoDate' in data) || (data.implementationInfoDate is string && data.implementationInfoDate.size() <= 32)) &&
+        (!('investigationOfficer' in data) || (data.investigationOfficer is string && data.investigationOfficer.size() <= 140)) &&
+        (!('patracharChalaniNo' in data) || (data.patracharChalaniNo is string && data.patracharChalaniNo.size() <= 80)) &&
+        (!('progressNote' in data) || (data.progressNote is string && data.progressNote.size() <= 1000)) &&
+        (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 500)) &&
         data.fiscalYear is string && data.fiscalYear.size() <= 16 && data.fiscalYear in ['2083/84', '2082/83', '2081/82'] &&
         data.monthIndex is int && data.monthIndex >= 1 && data.monthIndex <= 12 &&
         data.nepaliDate is string && data.nepaliDate.size() >= 4 && data.nepaliDate.size() <= 32 &&
@@ -140,7 +157,7 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
-    // 4. Collection: /users/{userId} (PII Isolated to Owner or Admin, Zero get() in allow list)
+    // 4. Collection: /users/{userId}
     match /users/{userId} {
       allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn() && (existing().uid == request.auth.uid || isBootstrappedAdmin() || isAdmin());
@@ -185,7 +202,6 @@ service cloud.firestore {
         (hasActiveProfile() && currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
       );
 
-      // Zero get()/exists() in allow list per Pillar 8 Cost-Optimization Clause; relational check on resource.data
       allow list: if isSignedIn() && (
         isBootstrappedAdmin() ||
         existing().createdByUid == request.auth.uid ||
@@ -210,8 +226,11 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time && (
           (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
-            'title', 'complainant', 'source', 'ministry', 'nature', 'status',
-            'districtEn', 'fiscalYear', 'monthIndex', 'nepaliDate',
+            'dartaNo', 'title', 'complainant', 'complainantContact', 'respondent', 'source', 'ministry', 'nature', 'status',
+            'priority', 'province', 'districtEn', 'localLevel', 'committeeDecision',
+            'finalDecision', 'finalDecisionType', 'finalDecisionDate', 'implementationInfoDate',
+            'investigationOfficer', 'patracharChalaniNo', 'progressNote', 'remarks',
+            'fiscalYear', 'monthIndex', 'nepaliDate',
             'mahashakhaId', 'shakhaId', 'updatedAt'
           ])) ||
           (
@@ -220,11 +239,30 @@ service cloud.firestore {
               (currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
               (currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
             ) &&
-            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'title', 'ministry', 'nature', 'updatedAt'])
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'title', 'complainant', 'complainantContact', 'respondent', 'source', 'ministry', 'nature',
+              'priority', 'province', 'districtEn', 'localLevel',
+              'committeeDecision', 'finalDecision', 'finalDecisionType', 'finalDecisionDate', 'implementationInfoDate',
+              'investigationOfficer', 'patracharChalaniNo', 'progressNote', 'remarks',
+              'mahashakhaId', 'shakhaId', 'updatedAt'
+            ])
+          ) ||
+          (
+            existing().status == 'farchhaut' &&
+            hasActiveProfile() && (
+              (currentUserDoc().role == 'mahashakha' && existing().mahashakhaId == currentUserDoc().mahashakhaId) ||
+              (currentUserDoc().role == 'shakha' && (existing().shakhaId == currentUserDoc().shakhaId || existing().createdByUid == request.auth.uid))
+            ) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'implementationInfoDate', 'progressNote', 'remarks', 'updatedAt'
+            ])
           )
         );
 
-      allow delete: if isValidId(complaintId) && isAdmin();
+      allow delete: if isValidId(complaintId) && (
+        isAdmin() ||
+        (hasActiveProfile() && existing().createdByUid == request.auth.uid && existing().status != 'farchhaut')
+      );
     }
 
     // 6. Collection: /activities/{activityId}

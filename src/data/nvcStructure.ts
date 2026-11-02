@@ -14,6 +14,8 @@ export const FISCAL_YEARS: { value: FiscalYear; labelNe: string }[] = [
   { value: '2081/82', labelNe: 'आ.व. २०८१/८२' },
 ];
 
+export const NEPALI_YEARS = ['२०८३', '२०८२', '२०८१', '२०८०', '२०७९'];
+
 export const NEPALI_MONTHS = [
   'बैशाख',
   'जेठ',
@@ -29,8 +31,8 @@ export const NEPALI_MONTHS = [
   'चैत्र',
 ];
 
-export const CURRENT_NEPALI_MONTH_INDEX = 7; // कार्तिक (2026-11-01 corresponds to Kartik 2083 BS)
-export const CURRENT_NEPALI_DATE_DISPLAY = '२०८३ कार्तिक १५, आइतबार';
+export const CURRENT_NEPALI_MONTH_INDEX = 7; // कार्तिक
+export const CURRENT_NEPALI_DATE_DISPLAY = '२०८३ कार्तिक १६, सोमबार';
 
 export const MAHASHAKHAS: MahashakhaDef[] = [
   {
@@ -159,8 +161,8 @@ export interface SidebarMenuItem {
 
 export const MENU_LABELS: Record<MenuId, string> = {
   dashboard: 'ड्यासबोर्ड',
-  new_complaint: 'नयाँ उजुरी',
   complaints_all: 'उजुरीहरु',
+  new_complaint: 'नयाँ उजुरी',
   hello_sarkar: 'हेलो सरकार उजुरी',
   online_complaint: 'अनलाइन उजुरी',
   hotline_complaint: 'हटलाइन उजुरी',
@@ -170,7 +172,6 @@ export const MENU_LABELS: Record<MenuId, string> = {
   project_monitoring: 'आयोजना अनुगमन',
   technical_audit: 'प्राविधिक परीक्षण',
   new_sample: 'नयाँ नमूना',
-  sample_reports: 'नमूना रिपोर्टहरु',
   promotional_program: 'प्रवर्द्धनात्मक कार्यक्रम',
   notice_publication: 'सूचना प्रकाशन',
   reports: 'रिपोर्टहरु',
@@ -181,14 +182,9 @@ export const MENU_LABELS: Record<MenuId, string> = {
 };
 
 /**
- * Exact Sidebar Menu Rules per Specification (a - g):
- * a. प्रशासन, योजना तथा अनुगमन शाखा
- * b. सूचना सङ्कलन..., आर्थिक प्रशासन..., उजुरी छानविन..., कानूनी राय..., सम्पत्ति विवरण..., निर्णय कार्यान्वयन... र प्रहरी शाखा
- * c. प्राविधिक परीक्षण शाखा, प्राविधिक छानविन तथा अनुगमन शाखा, प्राविधिक परीक्षण तालिम तथा क्षमता विकास शाखा, सूचना प्रविधि शाखा
- * d. प्रयोगशाला परीक्षण शाखा
- * e. प्रशासन तथा सूचना सङ्कलन महाशाखा र प्रहरी महाशाखा
- * f. प्राविधिक परीक्षण तथा अनुगमन महाशाखा
- * g. एडमिन (Admin)
+ * Updated Sidebar Menu Rules:
+ * - 'उजुरीहरु' (complaints_all) पछि सधैँ 'नयाँ उजुरी' (new_complaint) राखिएको छ।
+ * - 'नमूना रिपोर्टहरु' लाई 'रिपोर्टहरु' (reports) बनाइएको छ।
  */
 export function getSidebarMenuForRole(
   role: RoleLevel,
@@ -202,6 +198,7 @@ export function getSidebarMenuForRole(
     ids = [
       'dashboard',
       'complaints_all',
+      'new_complaint',
       'hello_sarkar',
       'online_complaint',
       'hotline_complaint',
@@ -210,7 +207,7 @@ export function getSidebarMenuForRole(
       'citizen_charter',
       'project_monitoring',
       'technical_audit',
-      'sample_reports',
+      'reports',
       'calendar',
       'change_password',
       'user_management',
@@ -222,6 +219,7 @@ export function getSidebarMenuForRole(
       ids = [
         'dashboard',
         'complaints_all',
+        'new_complaint',
         'hello_sarkar',
         'online_complaint',
         'hotline_complaint',
@@ -230,7 +228,7 @@ export function getSidebarMenuForRole(
         'citizen_charter',
         'project_monitoring',
         'technical_audit',
-        'sample_reports',
+        'reports',
         'calendar',
         'change_password',
         'settings',
@@ -240,12 +238,14 @@ export function getSidebarMenuForRole(
       ids = [
         'dashboard',
         'complaints_all',
+        'new_complaint',
         'hello_sarkar',
         'online_complaint',
         'hotline_complaint',
         'investigation',
         'office_monitoring',
         'citizen_charter',
+        'reports',
         'calendar',
         'change_password',
         'settings',
@@ -260,6 +260,7 @@ export function getSidebarMenuForRole(
       // a. प्रशासन, योजना तथा अनुगमन शाखा
       ids = [
         'dashboard',
+        'complaints_all',
         'new_complaint',
         'hello_sarkar',
         'online_complaint',
@@ -269,6 +270,7 @@ export function getSidebarMenuForRole(
         'citizen_charter',
         'promotional_program',
         'notice_publication',
+        'reports',
         'calendar',
         'change_password',
         'settings',
@@ -277,8 +279,8 @@ export function getSidebarMenuForRole(
       // c. प्राविधिक परीक्षण शाखा, प्राविधिक छानविन..., तालिम..., सूचना प्रविधि शाखा
       ids = [
         'dashboard',
-        'new_complaint',
         'complaints_all',
+        'new_complaint',
         'investigation',
         'project_monitoring',
         'technical_audit',
@@ -291,13 +293,12 @@ export function getSidebarMenuForRole(
       // d. प्रयोगशाला परीक्षण शाखा
       ids = [
         'dashboard',
-        'new_complaint',
         'complaints_all',
+        'new_complaint',
         'investigation',
         'project_monitoring',
         'technical_audit',
         'new_sample',
-        'sample_reports',
         'reports',
         'calendar',
         'change_password',
@@ -307,8 +308,8 @@ export function getSidebarMenuForRole(
       // b. सूचना सङ्कलन..., आर्थिक प्रशासन..., उजुरी छानविन..., कानूनी राय..., सम्पत्ति विवरण..., निर्णय कार्यान्वयन..., र प्रहरी शाखा
       ids = [
         'dashboard',
-        'new_complaint',
         'complaints_all',
+        'new_complaint',
         'investigation',
         'office_monitoring',
         'citizen_charter',
@@ -323,11 +324,6 @@ export function getSidebarMenuForRole(
   return ids.map((id) => ({ id, labelNe: MENU_LABELS[id] }));
 }
 
-/**
- * Requirement i:
- * प्राविधिक परीक्षण तथा अनुगमन शाखा र महाशाखाको ड्यासबोर्डको stat card मा
- * ‘कूल आयोजना अनुगमन’, ‘यस महिनाको आयोजना अनुगमन’, ‘कूल प्राविधिक परीक्षण’ र ‘यस महिनाको प्राविधिक परीक्षण’ पनि थप stat card राख्नुहोस्।
- */
 export function hasExtraTechnicalStatCards(
   role: RoleLevel,
   mahashakhaId: string,
@@ -353,18 +349,18 @@ export const COMPLAINT_SOURCE_LABELS: Record<ComplaintSource, string> = {
 };
 
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
+  kam_baki: 'काम बाँकी',
   chalu: 'चालु',
   farchhaut: 'फर्छ्यौट भएको',
   patrachar_baki: 'पत्राचार बाँकी',
   chhanbin_ma: 'छानविनमा रहेको',
-  kam_baki: 'काम बाँकी',
 };
 
 export const MINISTRIES_LIST = [
   'भौतिक पूर्वाधार तथा यातायात मन्त्रालय',
+  'भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय',
   'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
   'सहरी विकास मन्त्रालय',
-  'भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय',
   'स्वास्थ्य तथा जनसङ्ख्या मन्त्रालय',
   'शिक्षा, विज्ञान तथा प्रविधि मन्त्रालय',
   'ऊर्जा, जलस्रोत तथा सिँचाइ मन्त्रालय',
@@ -382,6 +378,121 @@ export const COMPLAINT_NATURES = [
   'नागरिक बडापत्र कार्यान्वयन अभाव',
   'सरकारी जग्गा तथा सार्वजनिक सम्पत्ति अतिक्रमण',
 ];
+
+export const FINAL_DECISION_TYPES = [
+  'तामेलीमा राख्ने',
+  'सुझाव / निर्देशन पठाउने',
+  'विस्तृत छानविन / प्राविधिक परीक्षण गर्ने',
+  'सम्बन्धित मन्त्रालय / निकायमा कारबाहीका लागि लेखिपठाउने',
+  'अख्तियार दुरुपयोग अनुसन्धान आयोगमा लेखिपठाउने',
+  'सतर्क / सचेत गराउने',
+  'प्रचलित कानून बमोजिम विभागीय कारबाहीको सिफारिस',
+  'अन्य निर्णय',
+];
+
+export interface ProvinceDef {
+  id: string;
+  nameNe: string;
+  districtsEn: string[];
+}
+
+export const PROVINCES_DATA: ProvinceDef[] = [
+  {
+    id: 'koshi',
+    nameNe: 'कोशी प्रदेश',
+    districtsEn: [
+      'Taplejung', 'Panchthar', 'Ilam', 'Jhapa', 'Morang', 'Sunsari',
+      'Dhankuta', 'Terhathum', 'Sankhuwasabha', 'Bhojpur', 'Solukhumbu',
+      'Okhaldhunga', 'Khotang', 'Udayapur',
+    ],
+  },
+  {
+    id: 'madhesh',
+    nameNe: 'मधेश प्रदेश',
+    districtsEn: [
+      'Saptari', 'Siraha', 'Dhanusha', 'Mahottari', 'Sarlahi', 'Rautahat', 'Bara', 'Parsa',
+    ],
+  },
+  {
+    id: 'bagmati',
+    nameNe: 'बागमती प्रदेश',
+    districtsEn: [
+      'Dolakha', 'Ramechhap', 'Sindhuli', 'Kabhrepalanchok', 'Sindhupalchok',
+      'Rasuwa', 'Nuwakot', 'Dhading', 'Chitawan', 'Makawanpur',
+      'Bhaktapur', 'Lalitpur', 'Kathmandu',
+    ],
+  },
+  {
+    id: 'gandaki',
+    nameNe: 'गण्डकी प्रदेश',
+    districtsEn: [
+      'Gorkha', 'Manang', 'Mustang', 'Myagdi', 'Kaski', 'Lamjung',
+      'Tanahu', 'Nawalparasi East', 'Syangja', 'Parbat', 'Baglung',
+    ],
+  },
+  {
+    id: 'lumbini',
+    nameNe: 'लुम्बिनी प्रदेश',
+    districtsEn: [
+      'Rukum East', 'Rolpa', 'Pyuthan', 'Gulmi', 'Arghakhanchi', 'Palpa',
+      'Nawalparasi West', 'Rupandehi', 'Kapilbastu', 'Dang', 'Banke', 'Bardiya',
+    ],
+  },
+  {
+    id: 'karnali',
+    nameNe: 'कर्णाली प्रदेश',
+    districtsEn: [
+      'Dolpa', 'Mugu', 'Humla', 'Jumla', 'Kalikot', 'Dailekh',
+      'Jajarkot', 'Rukum West', 'Salyan', 'Surkhet',
+    ],
+  },
+  {
+    id: 'sudurpashchim',
+    nameNe: 'सुदूरपश्चिम प्रदेश',
+    districtsEn: [
+      'Bajura', 'Bajhang', 'Darchula', 'Baitadi', 'Dadeldhura',
+      'Doti', 'Achham', 'Kailali', 'Kanchanpur',
+    ],
+  },
+];
+
+export const DISTRICT_LOCAL_LEVELS: Record<string, string[]> = {
+  Kathmandu: ['काठमाडौँ महानगरपालिका', 'कीर्तिपुर नगरपालिका', 'बूढानीलकण्ठ नगरपालिका', 'चन्द्रागिरि नगरपालिका', 'टोखा नगरपालिका'],
+  Lalitpur: ['ललितपुर महानगरपालिका', 'गोदावरी नगरपालिका', 'महालक्ष्मी नगरपालिका', 'कोन्ज्योसोम गाउँपालिका'],
+  Bhaktapur: ['भक्तपुर नगरपालिका', 'मध्यपुर थिमी नगरपालिका', 'सूर्यविनायक नगरपालिका', 'चाँगुनारायण नगरपालिका'],
+  Bara: ['कलैया उपमहानगरपालिका', 'जीतपुरसिमरा उपमहानगरपालिका', 'कोल्हवी नगरपालिका', 'निजगढ नगरपालिका', 'प्रसौनी गाउँपालिका'],
+  Siraha: ['सिरहा नगरपालिका', 'लहान नगरपालिका', 'सुखिपुर नगरपालिका', 'गोलबजार नगरपालिका', 'भगवानपुर गाउँपालिका'],
+  Saptari: ['राजविराज नगरपालिका', 'खडक नगरपालिका', 'तिलाठी कोईलाडी गाउँपालिका', 'कञ्चनरुप नगरपालिका'],
+  Ilam: ['इलाम नगरपालिका', 'सूर्योदय नगरपालिका', 'देउमाई नगरपालिका', 'माईजोगमाई गाउँपालिका'],
+  Panchthar: ['फिदिम नगरपालिका', 'फालेलुङ गाउँपालिका', 'मिक्लाजुङ गाउँपालिका', 'हिलिहाङ गाउँपालिका'],
+  Mahottari: ['जलेश्वर नगरपालिका', 'बर्दिबास नगरपालिका', 'एकडारा गाउँपालिका', 'गौशाला नगरपालिका'],
+  Dhanusha: ['जनकपुरधाम उपमहानगरपालिका', 'क्षिरेश्वरनाथ नगरपालिका', 'मिथिला नगरपालिका', 'मुखियापट्टी मुसहरनिया गाउँपालिका'],
+  Kaski: ['पोखरा महानगरपालिका', 'अन्नपूर्ण गाउँपालिका', 'माछापुच्छ्रे गाउँपालिका', 'रूपा गाउँपालिका'],
+  Morang: ['विराटनगर महानगरपालिका', 'सुन्दरहरैंचा नगरपालिका', 'बेलबारी नगरपालिका', 'बुढीगंगा गाउँपालिका'],
+  Chitawan: ['भरतपुर महानगरपालिका', 'रत्ननगर नगरपालिका', 'खैरहनी नगरपालिका', 'इच्छाकामना गाउँपालिका'],
+  Rupandehi: ['बुटवल उपमहानगरपालिका', 'सिद्धार्थनगर नगरपालिका', 'तिलोत्तमा नगरपालिका', 'सैनामैना नगरपालिका'],
+  Kailali: ['धनगढी उपमहानगरपालिका', 'टीकापुर नगरपालिका', 'गोदावरी नगरपालिका', 'जानकी गाउँपालिका'],
+  Surkhet: ['वीरेन्द्रनगर नगरपालिका', 'भेरीगंगा नगरपालिका', 'गुर्भाकोट नगरपालिका', 'बराहताल गाउँपालिका'],
+  Parsa: ['वीरगञ्ज महानगरपालिका', 'पोखरिया नगरपालिका', 'पर्सागढी नगरपालिका', 'ठोरी गाउँपालिका'],
+};
+
+export function getLocalLevelsForDistrict(districtEn: string): string[] {
+  if (DISTRICT_LOCAL_LEVELS[districtEn]) {
+    return DISTRICT_LOCAL_LEVELS[districtEn];
+  }
+  const ne = DISTRICT_NE_MAP[districtEn] || districtEn;
+  return [
+    `${ne} नगरपालिका`,
+    `${ne} सदरमुकाम नगरपालिका`,
+    `${ne} गाउँपालिका - १`,
+    `${ne} गाउँपालिका - २`,
+  ];
+}
+
+export function getProvinceForDistrict(districtEn: string): string {
+  const found = PROVINCES_DATA.find((p) => p.districtsEn.includes(districtEn));
+  return found?.nameNe || 'बागमती प्रदेश';
+}
 
 export const DISTRICT_NE_MAP: Record<string, string> = {
   Achham: 'अछाम',
@@ -477,6 +588,22 @@ export function toNepaliDigits(value: number | string): string {
     '9': '९',
   };
   return String(value).replace(/[0-9]/g, (d) => map[d] || d);
+}
+
+export function fromNepaliDigits(value: string): string {
+  const map: Record<string, string> = {
+    '०': '0',
+    '१': '1',
+    '२': '2',
+    '३': '3',
+    '४': '4',
+    '५': '5',
+    '६': '6',
+    '७': '7',
+    '८': '8',
+    '९': '9',
+  };
+  return String(value).replace(/[०-९]/g, (d) => map[d] || d);
 }
 
 export function getMahashakhaName(id: string): string {

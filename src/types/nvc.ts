@@ -19,8 +19,8 @@ export type ShakhaId =
 
 export type MenuId =
   | 'dashboard'
-  | 'new_complaint'
   | 'complaints_all'
+  | 'new_complaint'
   | 'hello_sarkar'
   | 'online_complaint'
   | 'hotline_complaint'
@@ -30,7 +30,6 @@ export type MenuId =
   | 'project_monitoring'
   | 'technical_audit'
   | 'new_sample'
-  | 'sample_reports'
   | 'promotional_program'
   | 'notice_publication'
   | 'reports'
@@ -41,6 +40,7 @@ export type MenuId =
 
 export type ComplaintSource = 'hello_sarkar' | 'online' | 'hotline' | 'kendra_darta';
 export type ComplaintStatus = 'chalu' | 'farchhaut' | 'patrachar_baki' | 'chhanbin_ma' | 'kam_baki';
+export type ComplaintPriority = 'उच्च' | 'मध्यम' | 'सामान्य';
 export type FiscalYear = '2083/84' | '2082/83' | '2081/82';
 
 export interface UserProfile {
@@ -60,13 +60,27 @@ export interface UserProfile {
 export interface ComplaintRecord {
   id: string;
   dartaNo: string;
-  title: string;
-  complainant: string;
+  title: string; // उजुरीको विवरण
+  complainant: string; // उजुरकर्ता
+  complainantContact?: string; // सम्पर्क नं / इमेल
+  respondent?: string; // विपक्षी
   source: ComplaintSource;
-  ministry: string;
+  ministry: string; // मन्त्रालय/निकाय
   nature: string;
-  status: ComplaintStatus;
-  districtEn: string;
+  status: ComplaintStatus; // स्थिति
+  priority?: ComplaintPriority; // उच्च / मध्यम / सामान्य
+  province?: string; // प्रदेश
+  districtEn: string; // जिल्ला
+  localLevel?: string; // स्थानीय तह
+  committeeDecision?: string; // समितिको निर्णय
+  finalDecision?: string; // अन्तिम निर्णय
+  finalDecisionType?: string; // अन्तिम निर्णयको प्रकार
+  finalDecisionDate?: string; // अन्तिम निर्णय मिति
+  implementationInfoDate?: string; // कार्यान्वयनको जानकारी प्राप्त मिति
+  investigationOfficer?: string; // अनुसन्धान/छानविन अधिकृत
+  patracharChalaniNo?: string; // पत्राचार चलानी नं.
+  progressNote?: string; // कारबाही प्रगति विवरण
+  remarks?: string; // कैफियत
   fiscalYear: FiscalYear;
   monthIndex: number; // 1 = बैशाख ... 12 = चैत्र
   nepaliDate: string;

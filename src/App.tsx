@@ -41,6 +41,7 @@ import {
   hasExtraTechnicalStatCards,
   MAHASHAKHAS,
   SHAKHAS,
+  toNepaliDigits,
 } from './data/nvcStructure';
 import { ensureInitialNvcSeedData } from './data/seedData';
 import { DashboardOverview } from './components/DashboardOverview';
@@ -59,7 +60,6 @@ import {
   HardHat,
   Compass,
   FlaskConical,
-  FileSpreadsheet,
   Megaphone,
   Newspaper,
   BarChart3,
@@ -78,8 +78,8 @@ import {
 
 const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
-  new_complaint: FilePlus2,
   complaints_all: Files,
+  new_complaint: FilePlus2,
   hello_sarkar: PhoneCall,
   online_complaint: Globe,
   hotline_complaint: Headphones,
@@ -89,7 +89,6 @@ const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = 
   project_monitoring: HardHat,
   technical_audit: Compass,
   new_sample: FlaskConical,
-  sample_reports: FileSpreadsheet,
   promotional_program: Megaphone,
   notice_publication: Newspaper,
   reports: BarChart3,
@@ -617,14 +616,25 @@ export default function App() {
                   setActiveMenu(item.id);
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left cursor-pointer ${
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left cursor-pointer ${
                   isActive
                     ? 'bg-red-700 text-white font-semibold'
                     : 'text-blue-100 hover:bg-blue-900/70 hover:text-white'
                 }`}
               >
-                <IconComp className="w-4 h-4 shrink-0" />
-                <span className="truncate">{item.labelNe}</span>
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <IconComp className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{item.labelNe}</span>
+                </span>
+                {item.id === 'complaints_all' && (
+                  <span
+                    className={`font-mono-num text-[11px] shrink-0 ${
+                      isActive ? 'text-white' : 'text-red-300 font-semibold'
+                    }`}
+                  >
+                    {toNepaliDigits(scopedComplaints.length)}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -842,7 +852,7 @@ export default function App() {
         )}
 
         {/* Main Workspace Canvas */}
-        <main className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto">
+        <main className="flex-1 p-4 lg:p-6 w-full min-w-0">
           {dataLoading ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -881,6 +891,7 @@ export default function App() {
               selectedFiscalYear={selectedFiscalYear}
               searchQuery={searchQuery}
               onNavigateDashboard={() => setActiveMenu('dashboard')}
+              onSelectMenu={(m) => setActiveMenu(m)}
             />
           )}
         </main>

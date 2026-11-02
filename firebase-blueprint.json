@@ -54,23 +54,31 @@
     },
     "Complaint": {
       "title": "Complaint",
-      "description": "Complaint record registered at National Vigilance Centre",
+      "description": "Complaint record registered at National Vigilance Centre with committee decision, final decision, investigation officer, branch assignment, and progress details",
       "type": "object",
       "properties": {
         "dartaNo": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 50
+          "maxLength": 80
         },
         "title": {
           "type": "string",
           "minLength": 2,
-          "maxLength": 240
+          "maxLength": 1500
         },
         "complainant": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 200
+        },
+        "complainantContact": {
+          "type": "string",
           "maxLength": 120
+        },
+        "respondent": {
+          "type": "string",
+          "maxLength": 240
         },
         "source": {
           "type": "string",
@@ -78,22 +86,69 @@
         },
         "ministry": {
           "type": "string",
-          "minLength": 1,
-          "maxLength": 140
+          "maxLength": 160
         },
         "nature": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 100
+          "maxLength": 120
         },
         "status": {
           "type": "string",
           "enum": ["chalu", "farchhaut", "patrachar_baki", "chhanbin_ma", "kam_baki"]
         },
+        "priority": {
+          "type": "string",
+          "enum": ["उच्च", "मध्यम", "सामान्य"]
+        },
+        "province": {
+          "type": "string",
+          "maxLength": 80
+        },
         "districtEn": {
           "type": "string",
           "minLength": 2,
           "maxLength": 64
+        },
+        "localLevel": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "committeeDecision": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "finalDecision": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "finalDecisionType": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "finalDecisionDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "implementationInfoDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "investigationOfficer": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "patracharChalaniNo": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "progressNote": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "remarks": {
+          "type": "string",
+          "maxLength": 500
         },
         "fiscalYear": {
           "type": "string",
