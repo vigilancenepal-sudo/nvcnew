@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { supabase, OperationType, handleSupabaseError } from '../supabase';
 import { UserProfile, RoleLevel, MahashakhaId, ShakhaId } from '../types/nvc';
 import {
   MAHASHAKHAS,
@@ -93,8 +85,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
     try {
       if (editingUser) {
-        const userRef = doc(db, 'users', editingUser.id);
-        await updateDoc(userRef, {
+        const { error } = await supabase.from('profiles').update({
           fullName: fullName.trim().slice(0, 120),
           email: email.trim().toLowerCase().slice(0, 160),
           designation: designation.trim().slice(0, 120),
@@ -102,13 +93,14 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
           mahashakhaId: normalizedMaha,
           shakhaId: normalizedShakha,
           status,
-          updatedAt: serverTimestamp(),
-        });
+          updatedAt: new Date().toISOString(),
+        }).eq('id', editingUser.id);
+        if (error) throw error;
         setFeedbackMsg(`प्रयोगकर्ता "${fullName}" को विवरण अद्यावधिक गरियो।`);
       } else {
-        const generatedId = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        const userRef = doc(collection(db, 'users'), generatedId);
-        await setDoc(userRef, {
+        const generatedId = crypto.randomUUID();
+        const { error } = await supabase.from('profiles').insert({
+          id: generatedId,
           uid: generatedId,
           email: email.trim().toLowerCase().slice(0, 160),
           fullName: fullName.trim().slice(0, 120),
@@ -117,14 +109,15 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
           mahashakhaId: normalizedMaha,
           shakhaId: normalizedShakha,
           status,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
+        if (error) throw error;
         setFeedbackMsg(`नयाँ प्रयोगकर्ता "${fullName}" सफलतापूर्वक दर्ता गरियो।`);
       }
       setIsModalOpen(false);
     } catch (err) {
-      handleFirestoreError(
+      handleSupabaseError(
         err,
         editingUser ? OperationType.UPDATE : OperationType.CREATE,
         'users'
@@ -138,15 +131,16 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     if (u.uid === currentAdminUid) return;
     const nextStatus = u.status === 'active' ? 'inactive' : 'active';
     try {
-      await updateDoc(doc(db, 'users', u.id), {
+      const { error } = await supabase.from('profiles').update({
         status: nextStatus,
-        updatedAt: serverTimestamp(),
-      });
+        updatedAt: new Date().toISOString(),
+      }).eq('id', u.id);
+      if (error) throw error;
       setFeedbackMsg(
         `"${u.fullName}" को स्थिति ${nextStatus === 'active' ? 'सक्रिय' : 'निष्क्रिय'} बनाइयो।`
       );
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${u.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `profiles/${u.id}`);
     }
   };
 
@@ -164,26 +158,28 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
         : 'all';
 
     try {
-      await updateDoc(doc(db, 'users', u.id), {
+      const { error } = await supabase.from('profiles').update({
         role: nextRole,
         mahashakhaId: nextMaha,
         shakhaId: nextShakha,
-        updatedAt: serverTimestamp(),
-      });
+        updatedAt: new Date().toISOString(),
+      }).eq('id', u.id);
+      if (error) throw error;
       setFeedbackMsg(`"${u.fullName}" को भूमिका परिवर्तन गरियो।`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${u.id}`);
+      handleSupabaseError(err, OperationType.UPDATE, `profiles/${u.id}`);
     }
   };
 
   const handleDeleteUser = async (u: UserProfile) => {
     if (u.uid === currentAdminUid) return;
     try {
-      await deleteDoc(doc(db, 'users', u.id));
+      const { error } = await supabase.from('profiles').delete().eq('id', u.id);
+      if (error) throw error;
       setConfirmDeleteId(null);
       setFeedbackMsg(`प्रयोगकर्ता "${u.fullName}" प्रणालीबाट हटाइयो।`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `users/${u.id}`);
+      handleSupabaseError(err, OperationType.DELETE, `profiles/${u.id}`);
     }
   };
 

@@ -1,27 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut,
-  User,
-} from 'firebase/auth';
-import {
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-  setDoc,
-  serverTimestamp,
-  where,
-} from 'firebase/firestore';
-import {
-  auth,
-  db,
-  googleProvider,
-  handleFirestoreError,
-  OperationType,
-} from './firebase';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import {
   ActivityRecord,
   ComplaintRecord,
@@ -99,11 +78,12 @@ const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = 
 };
 
 export default function App() {
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   // Admin Perspective Preview Switcher (Allows Admin to inspect any of the 3 Mahashakhas or 13 Shakhas live)
   const [previewMode, setPreviewMode] = useState<{
@@ -127,7 +107,7 @@ export default function App() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Firestore Collections State
+  // Supabase collections state
   const [allComplaints, setAllComplaints] = useState<ComplaintRecord[]>([]);
   const [allActivities, setAllActivities] = useState<ActivityRecord[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -147,168 +127,176 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // 1. Listen to Firebase Authentication
+  // 1. Listen to Supabase Authentication
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setFirebaseUser(u);
+    let active = true;
+
+    const loadProfile = async (user: User | null) => {
+      setAuthenticatedUser(user);
       setAuthReady(true);
 
-      if (!u) {
+      if (!user) {
         setUserProfile(null);
         setAllComplaints([]);
         setAllActivities([]);
         setAllUsers([]);
+        setDataLoading(false);
+        setProfileLoading(false);
         return;
       }
 
       setProfileLoading(true);
+      setAuthError(null);
       try {
-        const userRef = doc(db, 'users', u.uid);
-        const snap = await getDoc(userRef);
-        const isPrimaryBootstrappedAdmin =
-          u.email?.toLowerCase() === 'vigilancenepal@gmail.com';
+        const { error: ensureProfileError } = await supabase.rpc('ensure_current_profile');
+        if (ensureProfileError) throw ensureProfileError;
 
-        if (!snap.exists()) {
-          // Check if an admin pre-registered a record matching this email
-          let initialRole: RoleLevel = isPrimaryBootstrappedAdmin
-            ? 'admin'
-            : 'shakha';
-          let initialMaha = isPrimaryBootstrappedAdmin ? 'all' : 'maha_admin';
-          let initialShakha = isPrimaryBootstrappedAdmin
-            ? 'all'
-            : 'shakha_admin_plan';
-          let initialDesignation = isPrimaryBootstrappedAdmin
-            ? 'मुख्य प्रणाली प्रशासक (Admin)'
-            : 'शाखा अधिकृत';
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('authUserId', user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) {
+          throw new Error('प्रयोगकर्ता प्रोफाइल भेटिएन। Supabase SQL schema लागू भएको जाँच गर्नुहोस्।');
+        }
 
-          const newProfileData = {
-            uid: u.uid,
-            email: (u.email || 'user@nvc.gov.np').toLowerCase(),
-            fullName: u.displayName || 'राष्ट्रिय सतर्कता केन्द्र अधिकारी',
-            designation: initialDesignation,
-            role: initialRole,
-            mahashakhaId: initialMaha,
-            shakhaId: initialShakha,
-            status: 'active' as const,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          };
-          await setDoc(userRef, newProfileData);
-
-          if (isPrimaryBootstrappedAdmin) {
-            await ensureInitialNvcSeedData(u.uid);
-          }
-        } else if (isPrimaryBootstrappedAdmin) {
-          await ensureInitialNvcSeedData(u.uid);
+        if (!active) return;
+        setUserProfile(data as UserProfile);
+        if (
+          data.role === 'admin' &&
+          data.status === 'active' &&
+          data.email.toLowerCase() === 'vigilancenepal@gmail.com'
+        ) {
+          await ensureInitialNvcSeedData(user.id);
         }
       } catch (err) {
-        handleFirestoreError(err, OperationType.GET, `users/${u.uid}`);
+        if (active) {
+          setAuthError(err instanceof Error ? err.message : String(err));
+          console.error('Unable to load Supabase profile:', err);
+        }
       } finally {
-        setProfileLoading(false);
+        if (active) setProfileLoading(false);
       }
+    };
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        setAuthError(error.message);
+        setAuthReady(true);
+        return;
+      }
+      void loadProfile(data.session?.user ?? null);
     });
 
-    return () => unsub();
-  }, []);
-
-  // 2. Real-time listener on current user's profile
-  useEffect(() => {
-    if (!authReady || !firebaseUser) return;
-    const userRef = doc(db, 'users', firebaseUser.uid);
-    const unsub = onSnapshot(
-      userRef,
-      (snap) => {
-        if (snap.exists()) {
-          const d = snap.data();
-          setUserProfile({
-            id: snap.id,
-            uid: d.uid,
-            email: d.email,
-            fullName: d.fullName,
-            designation: d.designation,
-            role: d.role,
-            mahashakhaId: d.mahashakhaId,
-            shakhaId: d.shakhaId,
-            status: d.status,
-          });
-        }
-      },
-      (err) => handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`)
-    );
-    return () => unsub();
-  }, [authReady, firebaseUser]);
-
-  // 3. Real-time RBAC-enforced listeners for Complaints, Activities, and Users
-  useEffect(() => {
-    if (!authReady || !firebaseUser || !userProfile) return;
-    if (userProfile.status !== 'active') return;
-
-    setDataLoading(true);
-
-    // Build RBAC-scoped query based on user's actual role
-    const complaintsCol = collection(db, 'complaints');
-    const activitiesCol = collection(db, 'activities');
-
-    const complaintsQuery =
-      userProfile.role === 'admin'
-        ? query(complaintsCol)
-        : userProfile.role === 'mahashakha'
-        ? query(complaintsCol, where('mahashakhaId', '==', userProfile.mahashakhaId))
-        : query(complaintsCol, where('shakhaId', '==', userProfile.shakhaId));
-
-    const activitiesQuery =
-      userProfile.role === 'admin'
-        ? query(activitiesCol)
-        : userProfile.role === 'mahashakha'
-        ? query(activitiesCol, where('mahashakhaId', '==', userProfile.mahashakhaId))
-        : query(activitiesCol, where('shakhaId', '==', userProfile.shakhaId));
-
-    const unsubComplaints = onSnapshot(
-      complaintsQuery,
-      (snap) => {
-        const list: ComplaintRecord[] = snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<ComplaintRecord, 'id'>),
-        }));
-        setAllComplaints(list);
-        setDataLoading(false);
-      },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'complaints')
-    );
-
-    const unsubActivities = onSnapshot(
-      activitiesQuery,
-      (snap) => {
-        const list: ActivityRecord[] = snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<ActivityRecord, 'id'>),
-        }));
-        setAllActivities(list);
-      },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'activities')
-    );
-
-    let unsubUsers: (() => void) | undefined;
-    if (userProfile.role === 'admin') {
-      unsubUsers = onSnapshot(
-        collection(db, 'users'),
-        (snap) => {
-          const list: UserProfile[] = snap.docs.map((docSnap) => ({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<UserProfile, 'id'>),
-          }));
-          setAllUsers(list);
-        },
-        (err) => handleFirestoreError(err, OperationType.LIST, 'users')
-      );
-    }
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => void loadProfile(session?.user ?? null), 0);
+    });
 
     return () => {
-      unsubComplaints();
-      unsubActivities();
-      if (unsubUsers) unsubUsers();
+      active = false;
+      authListener.subscription.unsubscribe();
     };
-  }, [authReady, firebaseUser, userProfile]);
+  }, []);
+
+  // 2. Listen for changes to the current user's profile
+  useEffect(() => {
+    if (!authReady || !authenticatedUser) return;
+    const channel = supabase
+      .channel(`profile-${authenticatedUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `authUserId=eq.${authenticatedUser.id}`,
+        },
+        async () => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('authUserId', authenticatedUser.id)
+            .maybeSingle();
+          if (error) {
+            setAuthError(error.message);
+            return;
+          }
+          setUserProfile(data as UserProfile | null);
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [authReady, authenticatedUser]);
+
+  // 3. Realtime listeners; row-level security enforces role and unit access.
+  useEffect(() => {
+    if (!authReady || !authenticatedUser || !userProfile) return;
+    if (userProfile.status !== 'active') {
+      setAllComplaints([]);
+      setAllActivities([]);
+      setAllUsers([]);
+      setDataLoading(false);
+      return;
+    }
+
+    setDataLoading(true);
+    setDataError(null);
+    let active = true;
+
+    const refreshData = async () => {
+      const [complaintsResult, activitiesResult] = await Promise.all([
+        supabase.from('complaints').select('*'),
+        supabase.from('activities').select('*'),
+      ]);
+      if (complaintsResult.error) throw complaintsResult.error;
+      if (activitiesResult.error) throw activitiesResult.error;
+      if (!active) return;
+      setAllComplaints(complaintsResult.data as ComplaintRecord[]);
+      setAllActivities(activitiesResult.data as ActivityRecord[]);
+      if (userProfile.role === 'admin') {
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) throw error;
+        if (!active) return;
+        setAllUsers(data as UserProfile[]);
+      } else {
+        setAllUsers([]);
+      }
+      setDataLoading(false);
+    };
+
+    const loadError = (error: unknown) => {
+      if (!active) return;
+      setDataError(error instanceof Error ? error.message : String(error));
+      setDataLoading(false);
+      console.error('Unable to load Supabase data:', error);
+    };
+    void refreshData().catch(loadError);
+
+    const channel = supabase
+      .channel(`nvc-data-${authenticatedUser.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
+        void refreshData().catch(loadError);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, () => {
+        void refreshData().catch(loadError);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        void refreshData().catch(loadError);
+      })
+      .subscribe((status, error) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          loadError(error ?? new Error(`Realtime subscription ${status.toLowerCase()}`));
+        }
+      });
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [authReady, authenticatedUser, userProfile]);
 
   // Effective Role & Unit (supports Admin inspecting Mahashakha/Shakha views)
   const effectiveRole: RoleLevel =
@@ -357,14 +345,14 @@ export default function App() {
     return allComplaints.filter(
       (c) =>
         c.shakhaId === effectiveShakhaId ||
-        c.createdByUid === firebaseUser?.uid
+        c.createdByUid === authenticatedUser?.id
     );
   }, [
     allComplaints,
     effectiveRole,
     effectiveMahashakhaId,
     effectiveShakhaId,
-    firebaseUser?.uid,
+    authenticatedUser?.id,
   ]);
 
   const scopedActivities = useMemo(() => {
@@ -377,14 +365,14 @@ export default function App() {
     return allActivities.filter(
       (a) =>
         a.shakhaId === effectiveShakhaId ||
-        a.createdByUid === firebaseUser?.uid
+        a.createdByUid === authenticatedUser?.id
     );
   }, [
     allActivities,
     effectiveRole,
     effectiveMahashakhaId,
     effectiveShakhaId,
-    firebaseUser?.uid,
+    authenticatedUser?.id,
   ]);
 
   const showExtraTechStats = useMemo(
@@ -411,17 +399,20 @@ export default function App() {
   const handleGoogleLogin = async () => {
     setAuthError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      setAuthError(
-        err?.message || 'प्रणालीमा लगइन गर्दा समस्या देखियो। पुन: प्रयास गर्नुहोस्।'
-      );
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : String(err));
     }
   };
 
   const handleLogout = async () => {
     setProfileDropdownOpen(false);
-    await signOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) setAuthError(error.message);
   };
 
   // ---------------- AUTHENTICATION GATE ----------------
@@ -438,7 +429,7 @@ export default function App() {
     );
   }
 
-  if (!firebaseUser || !userProfile) {
+  if (!authenticatedUser || !userProfile) {
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col justify-between">
         {/* Top Official Sovereign Strip */}
@@ -853,7 +844,18 @@ export default function App() {
 
         {/* Main Workspace Canvas */}
         <main className="flex-1 p-4 lg:p-6 w-full min-w-0">
-          {dataLoading ? (
+          {dataError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+              <p>{dataError}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-3 px-3 py-1.5 bg-red-800 text-white rounded text-xs font-semibold"
+              >
+                पुन: प्रयास गर्नुहोस्
+              </button>
+            </div>
+          ) : dataLoading ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                 {Array.from({ length: 10 }).map((_, idx) => (
@@ -877,14 +879,14 @@ export default function App() {
           ) : activeMenu === 'user_management' && effectiveRole === 'admin' ? (
             <UserManagementView
               users={allUsers}
-              currentAdminUid={firebaseUser.uid}
+              currentAdminUid={authenticatedUser.id}
             />
           ) : (
             <ModuleWorkspaceView
               activeMenu={activeMenu}
               complaints={scopedComplaints}
               activities={scopedActivities}
-              currentUid={firebaseUser.uid}
+              currentUid={authenticatedUser.id}
               effectiveRole={effectiveRole}
               effectiveMahashakhaId={effectiveMahashakhaId}
               effectiveShakhaId={effectiveShakhaId}

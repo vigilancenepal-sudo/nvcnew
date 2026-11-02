@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { supabase, OperationType, handleSupabaseError } from '../supabase';
 import {
   ComplaintRecord,
   ComplaintSource,
@@ -361,10 +360,11 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
     if (!editingComplaint) return;
     setSaving(true);
     try {
-      await deleteDoc(doc(db, 'complaints', editingComplaint.id));
+      const { error } = await supabase.from('complaints').delete().eq('id', editingComplaint.id);
+      if (error) throw error;
       onSaved();
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `complaints/${editingComplaint.id}`);
+      handleSupabaseError(err, OperationType.DELETE, `complaints/${editingComplaint.id}`);
     } finally {
       setSaving(false);
     }
@@ -420,14 +420,15 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
     try {
       if (editingComplaint) {
         if (editingComplaint.status === 'farchhaut' && effectiveRole !== 'admin') {
-          await updateDoc(doc(db, 'complaints', editingComplaint.id), {
+          const { error } = await supabase.from('complaints').update({
             implementationInfoDate: implementationInfoDateStr,
             progressNote: (progressNote.trim() || '-').slice(0, 1000),
             remarks: (remarks.trim() || '-').slice(0, 500),
-            updatedAt: serverTimestamp(),
-          });
+            updatedAt: new Date().toISOString(),
+          }).eq('id', editingComplaint.id);
+          if (error) throw error;
         } else {
-          await updateDoc(doc(db, 'complaints', editingComplaint.id), {
+          const { error } = await supabase.from('complaints').update({
             dartaNo: dartaNo.trim().slice(0, 80),
             title: description.trim().slice(0, 1500),
             complainant: (complainant.trim() || 'बेनामी').slice(0, 200),
@@ -459,13 +460,15 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
             nepaliDate: nepaliDateStr,
             monthIndex: dartaMonthIdx,
             fiscalYear: resolvedFiscalYear,
-            updatedAt: serverTimestamp(),
-          });
+            updatedAt: new Date().toISOString(),
+          }).eq('id', editingComplaint.id);
+          if (error) throw error;
         }
         setToastMsg(`उजुरी दर्ता नं. ${dartaNo} सफलतापूर्वक अद्यावधिक गरियो।`);
       } else {
         const newId = `cmp_${Date.now()}`;
-        await setDoc(doc(collection(db, 'complaints'), newId), {
+        const { error } = await supabase.from('complaints').insert({
+          id: newId,
           dartaNo: dartaNo.trim().slice(0, 80),
           title: description.trim().slice(0, 1500),
           complainant: (complainant.trim() || 'बेनामी').slice(0, 200),
@@ -494,9 +497,10 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
           mahashakhaId: assignedMahashakhaId,
           shakhaId: assignedShakhaId,
           createdByUid: currentUid,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
+        if (error) throw error;
         setToastMsg(`नयाँ उजुरी (दर्ता नं. ${dartaNo}) सफलतापूर्वक सुरक्षित गरियो।`);
       }
 
@@ -504,7 +508,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
         onSaved();
       }, 700);
     } catch (err) {
-      handleFirestoreError(
+      handleSupabaseError(
         err,
         editingComplaint ? OperationType.UPDATE : OperationType.CREATE,
         'complaints'

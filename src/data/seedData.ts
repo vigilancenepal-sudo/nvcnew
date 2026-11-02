@@ -1,13 +1,4 @@
-import {
-  collection,
-  doc,
-  writeBatch,
-  serverTimestamp,
-  getDocs,
-  query,
-  limit,
-} from 'firebase/firestore';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { supabase, OperationType, handleSupabaseError } from '../supabase';
 import {
   ComplaintSource,
   ComplaintStatus,
@@ -246,28 +237,30 @@ const SHAKHA_ROTATION: { mahashakhaId: MahashakhaId; shakhaId: ShakhaId }[] = [
 ];
 
 export async function ensureInitialNvcSeedData(currentUid: string): Promise<void> {
-  try {
-    const existingSnap = await getDocs(query(collection(db, 'complaints'), limit(1)));
-    if (!existingSnap.empty) {
-      return;
-    }
-  } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'complaints');
+  const { data: existing, error: existingError } = await supabase
+    .from('complaints')
+    .select('id')
+    .limit(1);
+  if (existingError) {
+    handleSupabaseError(existingError, OperationType.LIST, 'complaints');
   }
+  if (existing.length > 0) return;
 
   try {
-    const batch = writeBatch(db);
+    const complaintRows: Record<string, unknown>[] = [];
+    const activityRows: Record<string, unknown>[] = [];
     const sources: ComplaintSource[] = ['hello_sarkar', 'online', 'hotline', 'kendra_darta'];
     const statuses: ComplaintStatus[] = ['kam_baki', 'chalu', 'farchhaut', 'patrachar_baki', 'chhanbin_ma'];
     const priorities: ComplaintPriority[] = ['मध्यम', 'उच्च', 'सामान्य'];
 
     REALISTIC_COMPLAINTS.forEach((item, idx) => {
       const id = `cmp_curated_${String(idx + 1).padStart(3, '0')}`;
-      batch.set(doc(db, 'complaints', id), {
+      complaintRows.push({
+        id,
         ...item,
         createdByUid: currentUid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     });
 
@@ -288,7 +281,8 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
       const status = statuses[i % statuses.length];
       const priority = priorities[i % priorities.length];
 
-      batch.set(doc(db, 'complaints', id), {
+      complaintRows.push({
+        id,
         dartaNo: `${1100 + i}/${fyPrefix}-${monthIndex}-${day}`,
         title: `${districtNe} जिल्ला ${localLevel} अन्तर्गत ${nature} सम्बन्धमा छानविन तथा आवश्यक कारबाही गरिपाउँ।`,
         complainant: i % 4 === 0 ? 'बेनामी' : `नागरिक निवेदक समूह, ${districtNe}`,
@@ -313,8 +307,8 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
         mahashakhaId: unit.mahashakhaId,
         shakhaId: unit.shakhaId,
         createdByUid: currentUid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
@@ -368,7 +362,8 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
         suchana_prakashan: `त्रैमासिक सतर्कता बुलेटिन तथा सार्वजनिक सूचना प्रकाशन`,
       };
 
-      batch.set(doc(db, 'activities', actId), {
+      activityRows.push({
+        id: actId,
         refNo: `ACT-२०८३-${200 + j}`,
         activityType: actType,
         title: titleMap[actType],
@@ -383,13 +378,20 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
         mahashakhaId: unit.mahashakhaId,
         shakhaId: unit.shakhaId,
         createdByUid: currentUid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
-    await batch.commit();
+    const { error: complaintsError } = await supabase
+      .from('complaints')
+      .upsert(complaintRows, { onConflict: 'id', ignoreDuplicates: true });
+    if (complaintsError) throw complaintsError;
+    const { error: activitiesError } = await supabase
+      .from('activities')
+      .upsert(activityRows, { onConflict: 'id', ignoreDuplicates: true });
+    if (activitiesError) throw activitiesError;
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'complaints/activities');
+    handleSupabaseError(err, OperationType.WRITE, 'complaints/activities');
   }
 }

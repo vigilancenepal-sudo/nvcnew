@@ -1,10 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { supabase, OperationType, handleSupabaseError } from '../supabase';
 import {
   ComplaintRecord,
   ComplaintSource,
-  ComplaintStatus,
   RoleLevel,
 } from '../types/nvc';
 import {
@@ -45,7 +43,10 @@ interface ComplaintsListViewProps {
   onEditComplaint: (cmp: ComplaintRecord) => void;
 }
 
+type SearchScope = 'all' | 'dartaNo' | 'complainant' | 'respondent' | 'title';
+
 export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
+  titleLabel,
   complaints,
   sourceFilter = null,
   globalSearchQuery,
@@ -72,7 +73,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
   // Column 3: खोजी र क्रम
   const [sortField, setSortField] = useState<'nepaliDate' | 'dartaNo'>('nepaliDate');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [searchScope, setSearchScope] = useState<'all' | 'dartaNo' | 'complainant' | 'respondent' | 'title'>('all');
+  const [searchScope, setSearchScope] = useState<SearchScope>('all');
   const [localSearch, setLocalSearch] = useState('');
 
   // Pagination & Selection
@@ -311,22 +312,24 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
     try {
       const ids = Array.from(selectedIds);
       for (const id of ids) {
-        await updateDoc(doc(db, 'complaints', id), {
+        const { error } = await supabase.from('complaints').update({
           remarks: bulkRemarksText.trim().slice(0, 500),
-          updatedAt: serverTimestamp(),
-        });
+          updatedAt: new Date().toISOString(),
+        }).eq('id', id);
+        if (error) throw error;
       }
       setRemarksModalOpen(false);
       setBulkRemarksText('');
       setBannerNotice(`${toNepaliDigits(ids.length)} उजुरीमा कैफियत अद्यावधिक गरियो।`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, 'complaints');
+      handleSupabaseError(err, OperationType.UPDATE, 'complaints');
     }
   };
 
   const handleDeleteRow = async (cmp: ComplaintRecord) => {
     try {
-      await deleteDoc(doc(db, 'complaints', cmp.id));
+      const { error } = await supabase.from('complaints').delete().eq('id', cmp.id);
+      if (error) throw error;
       setConfirmDeleteId(null);
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -335,7 +338,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
       });
       setBannerNotice(`दर्ता नं. ${cmp.dartaNo} प्रणालीबाट हटाइयो।`);
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `complaints/${cmp.id}`);
+      handleSupabaseError(err, OperationType.DELETE, `complaints/${cmp.id}`);
     }
   };
 
@@ -555,7 +558,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                 <div className="flex items-center gap-1.5">
                   <select
                     value={searchScope}
-                    onChange={(e) => setSearchScope(e.target.value as any)}
+                    onChange={(e) => setSearchScope(e.target.value as SearchScope)}
                     className="w-28 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800 shrink-0"
                   >
                     <option value="all">सबै</option>
@@ -625,7 +628,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
         {/* Table Toolbar */}
         <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-sm font-bold text-slate-900">
-            उजुरी सूची ({filteredAndSorted.length})
+            {titleLabel} ({filteredAndSorted.length})
           </h3>
 
           <div className="flex flex-wrap items-center gap-2 text-xs">

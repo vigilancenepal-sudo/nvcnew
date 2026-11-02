@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, OperationType, handleFirestoreError } from '../firebase';
+import { supabase, OperationType, handleSupabaseError } from '../supabase';
 import {
   MenuId,
   ComplaintRecord,
@@ -68,7 +67,8 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
     setSaving(true);
     const id = `act_${Date.now()}`;
     try {
-      await setDoc(doc(collection(db, 'activities'), id), {
+      const { error } = await supabase.from('activities').insert({
+        id,
         refNo: `LAB-२०८३-${Math.floor(100 + Math.random() * 899)}`,
         activityType: 'namuna_parikshan',
         title: sampleTitle.trim().slice(0, 240),
@@ -83,14 +83,15 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
         mahashakhaId: 'maha_tech',
         shakhaId: 'shakha_lab_testing',
         createdByUid: currentUid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
+      if (error) throw error;
       setSampleTitle('');
       setSampleEntity('');
       setNotice('प्रयोगशाला परीक्षणका लागि नयाँ नमूना दर्ता गरियो।');
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'activities');
+      handleSupabaseError(err, OperationType.CREATE, 'activities');
     } finally {
       setSaving(false);
     }
