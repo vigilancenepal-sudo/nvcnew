@@ -36,6 +36,7 @@ import {
   SearchCheck,
   Building2,
   ScrollText,
+  MessageSquareText,
   HardHat,
   Compass,
   FlaskConical,
@@ -53,6 +54,8 @@ import {
   Menu,
   X,
   Eye,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = {
@@ -65,6 +68,7 @@ const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = 
   investigation: SearchCheck,
   office_monitoring: Building2,
   citizen_charter: ScrollText,
+  service_survey: MessageSquareText,
   project_monitoring: HardHat,
   technical_audit: Compass,
   new_sample: FlaskConical,
@@ -100,10 +104,12 @@ export default function App() {
 
   // Navigation & Global Filters
   const [activeMenu, setActiveMenu] = useState<MenuId>('dashboard');
+  const [startupNoticeDismissed, setStartupNoticeDismissed] = useState(false);
   const [selectedFiscalYear, setSelectedFiscalYear] =
     useState<FiscalYear>('2083/84');
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -375,6 +381,24 @@ export default function App() {
     authenticatedUser?.id,
   ]);
 
+  const startupNotice = useMemo(
+    () =>
+      scopedActivities
+        .filter((activity) => activity.activityType === 'suchana_prakashan')
+        .sort((a, b) => {
+          const dateA =
+            a.noticePublicationDetails?.date ?? a.nepaliDate ?? '';
+          const dateB =
+            b.noticePublicationDetails?.date ?? b.nepaliDate ?? '';
+          return dateB.localeCompare(dateA);
+        })[0] ?? null,
+    [scopedActivities]
+  );
+
+  useEffect(() => {
+    setStartupNoticeDismissed(false);
+  }, [authenticatedUser?.id]);
+
   const showExtraTechStats = useMemo(
     () =>
       hasExtraTechnicalStatCards(
@@ -435,7 +459,7 @@ export default function App() {
         {/* Top Official Sovereign Strip */}
         <div className="bg-blue-950 text-white border-b-2 border-red-700 px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between text-xs">
-            <span>नेपाल सरकार · प्रधानमन्त्री तथा मन्त्रिपरिषद्को कार्यालय</span>
+            <span>नेपाल सरकार · राष्ट्रिय सतर्कता केन्द्र</span>
             <span>सिंहदरबार, काठमाडौँ · मिति: {CURRENT_NEPALI_DATE_DISPLAY}</span>
           </div>
         </div>
@@ -446,9 +470,11 @@ export default function App() {
             <div className="md:col-span-7 bg-blue-950 text-white p-8 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-red-700 flex items-center justify-center shrink-0">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
+                  <img
+                    src="/coa.png"
+                    alt="नेपालको राष्ट्रिय चिन्ह"
+                    className="w-11 h-11 rounded-lg object-contain shrink-0"
+                  />
                   <div>
                     <p className="text-xs text-blue-200">नेपाल सरकार</p>
                     <h1 className="text-xl font-bold tracking-tight">
@@ -461,7 +487,7 @@ export default function App() {
                   एकीकृत उजुरी व्यवस्थापन, प्राविधिक परीक्षण तथा अनुगमन प्रणाली (NVC-IMS)
                 </h2>
                 <p className="mt-3 text-xs text-slate-300 leading-relaxed">
-                  भ्रष्टाचार निवारण ऐन, २०५९ बमोजिम सार्वजनिक निकायहरूमा हुने अनियमितता नियन्त्रण, उजुरी छानविन, छड्के कार्यालय अनुगमन, नागरिक बडापत्र सुपरीवेक्षण तथा विकास आयोजनाहरूको प्राविधिक परीक्षण व्यवस्थापन गर्ने आधिकारिक प्लेटफर्म।
+                  भ्रष्टाचार निवारण ऐन, २०५९ बमोजिम सार्वजनिक निकायहरूमा हुने अनियमितता नियन्त्रण, उजुरी छानविन, नियमित र आकस्मिक अनुगमन, नागरिक बडापत्र कार्यान्वयन अनुगमन तथा विकास आयोजनाहरूको अनुगमन एवम् प्राविधिक परीक्षण।
                 </p>
               </div>
 
@@ -556,23 +582,40 @@ export default function App() {
 
       {/* Left Sidebar Navigation (264px width) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-66 bg-blue-950 text-slate-100 flex flex-col border-r border-blue-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-66 ${
+          sidebarCollapsed ? 'lg:w-16' : 'lg:w-66'
+        } bg-blue-950 text-slate-100 flex flex-col border-r border-blue-900 transition-[width,transform] duration-200 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:translate-x-0 ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Sidebar Header */}
-        <div className="px-4 py-4 border-b border-blue-900 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded bg-red-700 flex items-center justify-center shrink-0">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <div className="min-w-0">
+        <div className={`border-b border-blue-900 flex items-center justify-between gap-2 px-4 py-4 ${
+          sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-2' : ''
+        }`}>
+          <div className={`flex items-center gap-2.5 min-w-0 ${
+            sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
+          }`}>
+            <img
+              src="/coa.png"
+              alt="नेपालको राष्ट्रिय चिन्ह"
+              className="w-8 h-8 rounded object-contain shrink-0"
+            />
+            <div className={`min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <div className="text-[11px] text-blue-300 truncate">नेपाल सरकार</div>
               <div className="text-sm font-bold text-white truncate">
                 राष्ट्रिय सतर्कता केन्द्र
               </div>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+            className="hidden lg:flex items-center justify-center rounded p-1.5 text-blue-200 hover:bg-blue-900 hover:text-white cursor-pointer"
+            aria-label={sidebarCollapsed ? 'साइडबार विस्तार गर्नुहोस्' : 'साइडबार संकुचित गर्नुहोस्'}
+            title={sidebarCollapsed ? 'साइडबार विस्तार गर्नुहोस्' : 'साइडबार संकुचित गर्नुहोस्'}
+          >
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
           <button
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
@@ -583,7 +626,9 @@ export default function App() {
         </div>
 
         {/* Active Unit Context Banner */}
-        <div className="px-4 py-2.5 bg-blue-900/50 border-b border-blue-900 text-[11px]">
+        <div className={`px-4 py-2.5 bg-blue-900/50 border-b border-blue-900 text-[11px] ${
+          sidebarCollapsed ? 'lg:hidden' : ''
+        }`}>
           <div className="text-blue-300">सक्रिय कार्यक्षेत्र:</div>
           <div className="font-semibold text-white leading-snug mt-0.5">
             {effectiveRole === 'admin'
@@ -595,7 +640,9 @@ export default function App() {
         </div>
 
         {/* Dynamic Role-Specific Menu List (Exact Specification a-g) */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5" aria-label="साइडबार मेनु">
+        <nav className={`sidebar-menu-scroll flex-1 overflow-y-auto py-3 space-y-0.5 ${
+          sidebarCollapsed ? 'px-2' : 'px-2.5'
+        }`} aria-label="साइडबार मेनु">
           {sidebarMenus.map((item) => {
             const IconComp = MENU_ICONS[item.id] || LayoutDashboard;
             const isActive = activeMenu === item.id;
@@ -607,19 +654,27 @@ export default function App() {
                   setActiveMenu(item.id);
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left cursor-pointer ${
+                title={sidebarCollapsed ? item.labelNe : undefined}
+                aria-label={item.labelNe}
+                className={`w-full flex items-center justify-between px-3 gap-2 py-2 rounded-md text-xs font-medium transition-colors text-left cursor-pointer ${
+                  sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
+                } ${
                   isActive
                     ? 'bg-red-700 text-white font-semibold'
                     : 'text-blue-100 hover:bg-blue-900/70 hover:text-white'
                 }`}
               >
-                <span className="flex items-center gap-2.5 min-w-0">
+                <span className={`flex items-center gap-2.5 min-w-0 ${
+                  sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
+                }`}>
                   <IconComp className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{item.labelNe}</span>
+                  <span className={`truncate ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.labelNe}</span>
                 </span>
                 {item.id === 'complaints_all' && (
                   <span
                     className={`font-mono-num text-[11px] shrink-0 ${
+                      sidebarCollapsed ? 'lg:hidden' : ''
+                    } ${
                       isActive ? 'text-white' : 'text-red-300 font-semibold'
                     }`}
                   >
@@ -632,8 +687,10 @@ export default function App() {
         </nav>
 
         {/* Bottom Institutional Note */}
-        <div className="p-3 border-t border-blue-900 text-[11px] text-blue-300">
-          सिंहदरबार, काठमाडौँ · टोल फ्री: ११११ / १०३
+        <div className={`p-3 border-t border-blue-900 text-[11px] text-blue-300 ${
+          sidebarCollapsed ? 'lg:hidden' : ''
+        }`}>
+          सिंहदरबार, हटलाइन: ०१४२००३४५
         </div>
       </aside>
 
@@ -892,12 +949,78 @@ export default function App() {
               effectiveShakhaId={effectiveShakhaId}
               selectedFiscalYear={selectedFiscalYear}
               searchQuery={searchQuery}
+              onActivitySaved={(record) =>
+                setAllActivities((current) => {
+                  const exists = current.some((activity) => activity.id === record.id);
+                  return exists
+                    ? current.map((activity) => (activity.id === record.id ? record : activity))
+                    : [record, ...current];
+                })
+              }
+              onActivityDeleted={(id) =>
+                setAllActivities((current) =>
+                  current.filter((activity) => activity.id !== id)
+                )
+              }
               onNavigateDashboard={() => setActiveMenu('dashboard')}
               onSelectMenu={(m) => setActiveMenu(m)}
             />
           )}
         </main>
       </div>
+      {!dataLoading &&
+        activeMenu === 'dashboard' &&
+        startupNotice &&
+        !startupNoticeDismissed && (
+          <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-slate-950/60 p-4">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="startup-notice-title"
+              className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl"
+            >
+              <header className="flex items-center justify-between bg-blue-950 px-5 py-4 text-white">
+                <div>
+                  <p className="text-[11px] text-blue-200">राष्ट्रिय सतर्कता केन्द्र · सूचना</p>
+                  <h2 id="startup-notice-title" className="mt-1 text-base font-bold">
+                    {startupNotice.noticePublicationDetails?.title ?? startupNotice.title}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  aria-label="सूचना बन्द गर्नुहोस्"
+                  onClick={() => setStartupNoticeDismissed(true)}
+                  className="rounded-md p-1.5 text-white/75 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </header>
+              <div className="space-y-4 p-5">
+                <p className="text-xs text-slate-500">
+                  मिति: {toNepaliDigits(
+                    startupNotice.noticePublicationDetails?.date ??
+                      startupNotice.nepaliDate
+                  )}
+                </p>
+                <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                  {startupNotice.noticePublicationDetails?.description ??
+                    startupNotice.reportSummary ??
+                    startupNotice.complaintDetails ??
+                    'सूचनाको विवरण उपलब्ध छैन।'}
+                </p>
+                <div className="flex justify-end border-t border-slate-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setStartupNoticeDismissed(true)}
+                    className="rounded-md bg-blue-950 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+                  >
+                    सूचना बन्द गर्नुहोस्
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
     </div>
   );
 }

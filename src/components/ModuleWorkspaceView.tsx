@@ -25,6 +25,14 @@ import {
 import { NewComplaintFormView } from './NewComplaintFormView';
 import { ComplaintsListView } from './ComplaintsListView';
 import { ReportsGeneratorView } from './ReportsGeneratorView';
+import { InvestigationWorkspaceView } from './InvestigationWorkspaceView';
+import { OfficeMonitoringWorkspaceView } from './OfficeMonitoringWorkspaceView';
+import { CitizenCharterWorkspaceView } from './CitizenCharterWorkspaceView';
+import { ServiceSurveyWorkspaceView } from './ServiceSurveyWorkspaceView';
+import { PromotionalProgramWorkspaceView } from './PromotionalProgramWorkspaceView';
+import { NoticePublicationWorkspaceView } from './NoticePublicationWorkspaceView';
+import { ProjectMonitoringWorkspaceView } from './ProjectMonitoringWorkspaceView';
+import { TechnicalAuditWorkspaceView } from './TechnicalAuditWorkspaceView';
 
 interface ModuleWorkspaceViewProps {
   activeMenu: MenuId;
@@ -36,6 +44,8 @@ interface ModuleWorkspaceViewProps {
   effectiveShakhaId: string;
   selectedFiscalYear: FiscalYear;
   searchQuery: string;
+  onActivitySaved: (record: ActivityRecord) => void;
+  onActivityDeleted: (id: string) => void;
   onNavigateDashboard: () => void;
   onSelectMenu: (menu: MenuId) => void;
 }
@@ -50,6 +60,8 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
   effectiveShakhaId,
   selectedFiscalYear,
   searchQuery,
+  onActivitySaved,
+  onActivityDeleted,
   onNavigateDashboard,
   onSelectMenu,
 }) => {
@@ -157,6 +169,118 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
         complaints={complaints}
         activities={activities}
         selectedFiscalYear={selectedFiscalYear}
+      />
+    );
+  }
+
+  if (activeMenu === 'investigation') {
+    return (
+      <InvestigationWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'office_monitoring') {
+    return (
+      <OfficeMonitoringWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        searchQuery={searchQuery}
+        onActivitySaved={onActivitySaved}
+      />
+    );
+  }
+
+  if (activeMenu === 'citizen_charter') {
+    return (
+      <CitizenCharterWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'service_survey') {
+    return (
+      <ServiceSurveyWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'project_monitoring') {
+    return (
+      <ProjectMonitoringWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'technical_audit') {
+    return (
+      <TechnicalAuditWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'promotional_program') {
+    return (
+      <PromotionalProgramWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
+    );
+  }
+
+  if (activeMenu === 'notice_publication') {
+    return (
+      <NoticePublicationWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
       />
     );
   }

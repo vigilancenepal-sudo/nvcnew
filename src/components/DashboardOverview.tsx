@@ -21,6 +21,33 @@ import {
   ChartDatum,
   MonthlyChartDatum,
 } from './SwitchableChartCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  faBuilding,
+  faBuildingColumns,
+  faBullhorn,
+  faCalendarCheck,
+  faCalendarDay,
+  faCalendarDays,
+  faCalendarMinus,
+  faCalendarWeek,
+  faCheckCircle,
+  faCircleCheck,
+  faCircleExclamation,
+  faClipboardCheck,
+  faEnvelope,
+  faFileCircleExclamation,
+  faFolderOpen,
+  faGlobe,
+  faHammer,
+  faHeadset,
+  faHourglassHalf,
+  faListCheck,
+  faMagnifyingGlass,
+  faPhone,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons';
 import { Eye, X } from 'lucide-react';
 
 interface DashboardOverviewProps {
@@ -39,6 +66,35 @@ interface StatItem {
   subNote?: string;
   highlight?: 'navy' | 'crimson' | 'teal' | 'default';
 }
+
+const STAT_ICONS: Record<string, { icon: IconDefinition; colorClass: string }> = {
+  total: { icon: faFolderOpen, colorClass: 'bg-blue-50 text-blue-700' },
+  prev_fy: { icon: faCalendarDays, colorClass: 'bg-violet-50 text-violet-700' },
+  curr_fy: { icon: faCalendarCheck, colorClass: 'bg-sky-50 text-sky-700' },
+  chalu: { icon: faHourglassHalf, colorClass: 'bg-amber-50 text-amber-700' },
+  farchhaut: { icon: faCircleCheck, colorClass: 'bg-emerald-50 text-emerald-700' },
+  kam_baki: { icon: faListCheck, colorClass: 'bg-rose-50 text-rose-700' },
+  prev_month: { icon: faCalendarMinus, colorClass: 'bg-cyan-50 text-cyan-700' },
+  this_month: { icon: faCalendarDay, colorClass: 'bg-teal-50 text-teal-700' },
+  hello_sarkar: { icon: faHeadset, colorClass: 'bg-orange-50 text-orange-700' },
+  hotline: { icon: faPhone, colorClass: 'bg-red-50 text-red-700' },
+  online: { icon: faGlobe, colorClass: 'bg-green-50 text-green-700' },
+  kendra_darta: { icon: faBuilding, colorClass: 'bg-indigo-50 text-indigo-700' },
+  patrachar_baki: { icon: faEnvelope, colorClass: 'bg-pink-50 text-pink-700' },
+  total_mon: { icon: faBuildingColumns, colorClass: 'bg-teal-50 text-teal-700' },
+  total_noncomp: { icon: faTriangleExclamation, colorClass: 'bg-orange-50 text-orange-700' },
+  total_dir: { icon: faBullhorn, colorClass: 'bg-yellow-50 text-yellow-700' },
+  month_mon: { icon: faCalendarWeek, colorClass: 'bg-cyan-50 text-cyan-700' },
+  month_noncomp: { icon: faCircleExclamation, colorClass: 'bg-amber-50 text-amber-700' },
+  month_dir: { icon: faBullhorn, colorClass: 'bg-purple-50 text-purple-700' },
+  chhanbin: { icon: faMagnifyingGlass, colorClass: 'bg-blue-50 text-blue-700' },
+  tech_audit: { icon: faClipboardCheck, colorClass: 'bg-indigo-50 text-indigo-700' },
+  proj_mon: { icon: faHammer, colorClass: 'bg-green-50 text-green-700' },
+  extra_total_proj: { icon: faBuilding, colorClass: 'bg-emerald-50 text-emerald-700' },
+  extra_month_proj: { icon: faCalendarDay, colorClass: 'bg-teal-50 text-teal-700' },
+  extra_total_tech: { icon: faFileCircleExclamation, colorClass: 'bg-violet-50 text-violet-700' },
+  extra_month_tech: { icon: faCheckCircle, colorClass: 'bg-sky-50 text-sky-700' },
+};
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   complaints,
@@ -295,6 +351,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   }, [filteredComplaints, activities, selectedFiscalYear, prevFiscalYear, selectedDistrict]);
 
   const renderStatTile = (item: StatItem) => {
+    const iconConfig = STAT_ICONS[item.key];
     const valueColor =
       item.highlight === 'crimson'
         ? 'text-red-800'
@@ -309,9 +366,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         key={item.key}
         className="bg-white border border-slate-200 rounded-lg px-4 py-3.5 hover:border-slate-300 transition-colors flex flex-col justify-between"
       >
-        <span className="text-xs font-medium text-slate-600 leading-snug">
-          {item.label}
-        </span>
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-xs font-medium text-slate-600 leading-snug">
+            {item.label}
+          </span>
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconConfig.colorClass}`}>
+            <FontAwesomeIcon icon={iconConfig.icon} aria-hidden="true" className="text-sm" />
+          </span>
+        </div>
         <div className={`mt-2 text-2xl font-bold font-mono-num tracking-tight ${valueColor}`}>
           {toNepaliDigits(item.value)}
         </div>
@@ -342,7 +404,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       <section aria-label="उजुरी व्यवस्थापन मुख्य सूचकहरू">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
           <h2 className="text-sm font-semibold text-slate-800">
-            ०१. उजुरी दर्ता, स्रोत तथा फर्छ्यौट विवरण
+            उजुरी दर्ता, स्रोत तथा फर्छ्यौट विवरण
           </h2>
           {selectedDistrict && (
             <span className="text-xs text-red-800 font-medium">
@@ -359,7 +421,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       <section aria-label="अनुगमन तथा परीक्षण सूचकहरू">
         <div className="flex items-center justify-between mb-2.5">
           <h2 className="text-sm font-semibold text-slate-800">
-            ०२. कार्यालय अनुगमन, अपरिपालना, निर्देशन तथा परीक्षण विवरण
+            कार्यालय अनुगमन, अपरिपालना, निर्देशन तथा परीक्षण विवरण
           </h2>
           <span className="text-xs text-slate-500">
             चालु महिना: {NEPALI_MONTHS[CURRENT_NEPALI_MONTH_INDEX - 1]} २०८३

@@ -29,3 +29,12 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+.sidebar-menu-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-menu-scroll::-webkit-scrollbar {
+  display: none;
+}

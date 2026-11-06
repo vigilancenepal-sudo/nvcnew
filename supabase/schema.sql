@@ -69,6 +69,25 @@ create table if not exists public.activities (
   "updatedAt" timestamptz not null default now()
 );
 
+alter table public.activities
+  add column if not exists "dartaNo" text,
+  add column if not exists "dartaDate" text,
+  add column if not exists complainant text,
+  add column if not exists respondent text,
+  add column if not exists "relatedAgency" text,
+  add column if not exists "complaintDetails" text,
+  add column if not exists "investigationDate" text,
+  add column if not exists "reportDate" text,
+  add column if not exists "reportSummary" text,
+  add column if not exists "attachmentPaths" text[] not null default '{}',
+  add column if not exists "officeMonitoringDetails" jsonb,
+  add column if not exists "citizenCharterDetails" jsonb,
+  add column if not exists "serviceSurveyDetails" jsonb,
+  add column if not exists "promotionalProgramDetails" jsonb,
+  add column if not exists "noticePublicationDetails" jsonb,
+  add column if not exists "projectMonitoringDetails" jsonb,
+  add column if not exists "technicalAuditDetails" jsonb;
+
 create index if not exists complaints_mahashakha_id_idx
   on public.complaints ("mahashakhaId");
 create index if not exists complaints_shakha_id_idx
@@ -300,6 +319,57 @@ grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.profiles to authenticated;
 grant select, insert, update, delete on public.complaints to authenticated;
 grant select, insert, update, delete on public.activities to authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'activity-attachments',
+  'activity-attachments',
+  false,
+  20971520,
+  array[
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/png'
+  ]
+)
+on conflict (id) do update
+set public = false,
+    file_size_limit = 20971520,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Users can upload investigation attachments" on storage.objects;
+create policy "Users can upload investigation attachments"
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'activity-attachments'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Users can read assigned investigation attachments" on storage.objects;
+create policy "Users can read assigned investigation attachments"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'activity-attachments'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or exists (
+        select 1
+        from public.activities a
+        where a."attachmentPaths" @> array[storage.objects.name]
+          and public.can_access_unit(a."mahashakhaId", a."shakhaId")
+      )
+    )
+  );
+
+drop policy if exists "Users can delete own investigation attachments" on storage.objects;
+create policy "Users can delete own investigation attachments"
+  on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'activity-attachments'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 do $$
 begin

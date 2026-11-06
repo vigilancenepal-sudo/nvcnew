@@ -354,6 +354,7 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
       const titleMap: Record<ActivityType, string> = {
         karyalaya_anugaman: `${districtNe} स्थित सरकारी कार्यालयहरूको छड्के हाजिरी तथा पोशाक अनुगमन`,
         badapatra_anugaman: `${districtNe} सेवा प्रदायक कार्यालयको नागरिक बडापत्र अनुगमन`,
+        service_survey: `${districtNe} सेवाग्राही सर्वेक्षण`,
         chhanbin_anveshan: `${districtNe} खरिद तथा निर्माण कार्यको विस्तृत छानविन अन्वेषण`,
         prabidhik_parikshan: `${districtNe} सडक तथा पुल निर्माण आयोजनाको प्राविधिक परीक्षण (Technical Audit)`,
         aayojana_anugaman: `${districtNe} राष्ट्रिय गौरव तथा बहुवर्षीय आयोजना स्थलगत अनुगमन`,

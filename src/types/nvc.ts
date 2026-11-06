@@ -27,6 +27,7 @@ export type MenuId =
   | 'investigation'
   | 'office_monitoring'
   | 'citizen_charter'
+  | 'service_survey'
   | 'project_monitoring'
   | 'technical_audit'
   | 'new_sample'
@@ -94,6 +95,7 @@ export interface ComplaintRecord {
 export type ActivityType =
   | 'karyalaya_anugaman'
   | 'badapatra_anugaman'
+  | 'service_survey'
   | 'chhanbin_anveshan'
   | 'prabidhik_parikshan'
   | 'aayojana_anugaman'
@@ -113,12 +115,162 @@ export interface ActivityRecord {
   nepaliDate: string;
   nonComplianceCount: number;
   directiveCount: number;
-  status: 'sampanna' | 'chalu' | 'pratibedan_pesh';
+  status: 'sampanna' | 'chalu' | 'pratibedan_pesh' | 'cancelled';
   mahashakhaId: MahashakhaId;
   shakhaId: ShakhaId;
   createdByUid: string;
+  dartaNo?: string | null;
+  dartaDate?: string | null;
+  complainant?: string | null;
+  respondent?: string | null;
+  relatedAgency?: string | null;
+  complaintDetails?: string | null;
+  investigationDate?: string | null;
+  reportDate?: string | null;
+  reportSummary?: string | null;
+  attachmentPaths?: string[] | null;
+  officeMonitoringDetails?: OfficeMonitoringDetails | null;
+  citizenCharterDetails?: CitizenCharterDetails | null;
+  serviceSurveyDetails?: ServiceSurveyDetails | null;
+  promotionalProgramDetails?: PromotionalProgramDetails | null;
+  noticePublicationDetails?: NoticePublicationDetails | null;
+  projectMonitoringDetails?: ProjectMonitoringDetails | null;
+  technicalAuditDetails?: TechnicalAuditDetails | null;
   createdAt?: unknown;
   updatedAt?: unknown;
+}
+
+export interface TechnicalAuditDetails {
+  projectName: string;
+  relatedAgency: string;
+  projectNature: string;
+  auditDate: string;
+  status: 'chalu' | 'sampanna' | 'pratibedan_pesh';
+  nonComplianceDetails: string;
+  reportDate: string;
+  reportInformationDate: string;
+  remarks: string;
+}
+
+export interface ProjectMonitoringCheck {
+  answer: 'yes' | 'no' | 'na' | '';
+  remarks: string;
+}
+
+export interface ProjectMonitoringTeamMember {
+  name: string;
+  post: string;
+  date: string;
+}
+
+export interface ProjectMonitoringDetails {
+  projectName: string;
+  province: string;
+  districtEn: string;
+  localLevel: string;
+  fullAddress: string;
+  wardNo: string;
+  implementingAgency: string;
+  contractorName: string;
+  agreementNo: string;
+  agreementDate: string;
+  startDate: string;
+  expectedCompletionDate: string;
+  approvedCost: number;
+  paidAmount: number;
+  physicalProgress: number;
+  inspectionDate: string;
+  checks: Record<string, ProjectMonitoringCheck>;
+  overallRemarks: string;
+  recommendation: string;
+  team: ProjectMonitoringTeamMember[];
+  status: 'planned' | 'ongoing' | 'completed' | 'delayed';
+}
+
+export interface NoticePublicationDetails {
+  date: string;
+  title: string;
+  description: string;
+}
+
+export interface PromotionalProgramDetails {
+  programName: string;
+  plannedFiscalYear: FiscalYear;
+  date: string;
+  location: string;
+  districtEn: string;
+  localLevel: string;
+  targetGroup: string;
+  participantCount: number;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+}
+
+export interface CitizenCharterDetails {
+  date: string;
+  province: string;
+  localLevel: string;
+  fullAddress: string;
+  officeName: string;
+  auditor: string;
+  auditorPost: string;
+  checks: Record<string, string>;
+  facilities: Record<string, string>;
+  mainServices: string;
+  irregularities: string;
+  recommendations: string;
+  staffing: {
+    sanctioned: number;
+    working: number;
+    vacant: number;
+    equalizationPending: number;
+    excess: number;
+  };
+  auditorRemarks: string;
+}
+
+export interface ServiceSurveyDetails {
+  province: string;
+  districtEn: string;
+  localLevel: string;
+  fullAddress: string;
+  gender: string;
+  previousOffices: string[];
+  serviceOffice: string;
+  improvements: string;
+  goodServiceOffices: string;
+  weakServiceOffices: string;
+  answers: Record<string, string>;
+  dissatisfactionReasons: string[];
+  surveyDate: string;
+}
+
+export interface OfficeMonitoringStaff {
+  type: string;
+  name: string;
+  designation: string;
+  signalNo: string;
+  remarks: string;
+}
+
+export interface OfficeMonitoringDetails {
+  date: string;
+  province: string;
+  localLevel: string;
+  officeName: string;
+  officePhone: string;
+  monitoringTime: string;
+  observer: string;
+  observerPost: string;
+  totalEmployees: number;
+  presentEmployees: number;
+  absentEmployees: number;
+  responsibleOfficer: string;
+  responsibleOfficerPost: string;
+  staff: OfficeMonitoringStaff[];
+  remarks: string;
+  timeViolationCount: number;
+  dressViolationCount: number;
+  recommendationCount: number;
 }
 
 export interface MahashakhaDef {

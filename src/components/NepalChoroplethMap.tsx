@@ -8,6 +8,11 @@ interface NepalChoroplethMapProps {
   districtCounts: Record<string, number>;
   selectedDistrict: string | null;
   onSelectDistrict: (districtEn: string | null) => void;
+  title?: string;
+  subtitle?: string;
+  entityLabel?: string;
+  entityPlural?: string;
+  emptyMessage?: string;
 }
 
 interface GeoFeature {
@@ -49,6 +54,11 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
   districtCounts,
   selectedDistrict,
   onSelectDistrict,
+  title = 'जिल्लागत उजुरी वितरण नक्सा (७७ जिल्ला GeoJSON Choropleth)',
+  subtitle = 'जिल्लामा क्लिक गरी सो जिल्लाका उजुरीहरू फिल्टर गर्नुहोस् · कूल ७७ जिल्ला समावेश',
+  entityLabel = 'उजुरी',
+  entityPlural = 'उजुरी',
+  emptyMessage = 'कुनै उजुरी दर्ता भएको छैन।',
 }) => {
   const [hoveredDistrict, setHoveredDistrict] = useState<{
     en: string;
@@ -119,12 +129,8 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
     <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
       <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-slate-100">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">
-            जिल्लागत उजुरी वितरण नक्सा (७७ जिल्ला GeoJSON Choropleth)
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            जिल्लामा क्लिक गरी सो जिल्लाका उजुरीहरू फिल्टर गर्नुहोस् · कूल ७७ जिल्ला समावेश
-          </p>
+          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -146,7 +152,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
               <span className="text-slate-500">{activeInfo.province}</span>
               <span className="mx-1.5 text-slate-300">·</span>
               <span className="font-semibold text-blue-900 tabular-nums">
-                {toNepaliDigits(activeInfo.count)} उजुरी
+                {toNepaliDigits(activeInfo.count)} {entityLabel}
               </span>
             </div>
           ) : (
@@ -163,7 +169,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
             viewBox="0 0 760 400"
             className="w-full h-auto max-h-[380px] select-none"
             role="img"
-            aria-label="नेपालको ७७ जिल्लाको उजुरी नक्सा"
+            aria-label={`नेपालको ७७ जिल्लाको ${entityPlural} नक्सा`}
           >
             <g>
               {paths.map((item) => {
@@ -194,7 +200,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
                     }
                   >
                     <title>
-                      {item.distNe} ({item.distEn}): {toNepaliDigits(count)} उजुरी
+                      {item.distNe} ({item.distEn}): {toNepaliDigits(count)} {entityLabel}
                     </title>
                   </path>
                 );
@@ -205,7 +211,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
           {/* Choropleth Legend */}
           <div className="px-4 py-2.5 bg-white/95 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
             <div className="flex items-center gap-3">
-              <span className="font-medium text-slate-700">उजुरी घनत्व:</span>
+              <span className="font-medium text-slate-700">{entityLabel} घनत्व:</span>
               <span className="inline-flex items-center gap-1">
                 <span className="w-3 h-3 rounded-xs bg-[#f1f5f9] border border-slate-300" />
                 ०
@@ -237,12 +243,12 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
         <div className="xl:col-span-3 flex flex-col justify-between space-y-3">
           <div>
             <div className="text-xs font-semibold text-slate-700 pb-2 border-b border-slate-200 flex items-center justify-between">
-              <span>अधिक उजुरी भएका जिल्लाहरू</span>
+              <span>अधिक {entityPlural} भएका जिल्लाहरू</span>
               <span className="text-slate-400">संख्या</span>
             </div>
             <div className="divide-y divide-slate-100 mt-1">
               {topDistricts.length === 0 ? (
-                <p className="py-4 text-xs text-slate-400">कुनै उजुरी दर्ता भएको छैन।</p>
+                <p className="py-4 text-xs text-slate-400">{emptyMessage}</p>
               ) : (
                 topDistricts.map((d, idx) => {
                   const active = selectedDistrict === d.en;
@@ -275,7 +281,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
           </div>
 
           <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed">
-            नक्सामा देखाइएका तथ्याङ्क हाल लगइन गरिएको तह र छनौट गरिएको आर्थिक वर्षको अधिकार क्षेत्रभित्रका उजुरीमा आधारित छन्।
+            नक्सामा देखाइएका तथ्याङ्क हाल लगइन गरिएको तह र छनौट गरिएको आर्थिक वर्षको अधिकार क्षेत्रभित्रका {entityPlural} मा आधारित छन्।
           </div>
         </div>
       </div>
