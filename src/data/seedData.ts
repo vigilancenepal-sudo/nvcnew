@@ -14,6 +14,7 @@ import {
   COMPLAINT_NATURES,
   getProvinceForDistrict,
   getLocalLevelsForDistrict,
+  toNepaliDigits,
 } from './nvcStructure';
 
 const ALL_DISTRICTS = Object.keys(DISTRICT_NE_MAP);
@@ -363,10 +364,56 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
         suchana_prakashan: `त्रैमासिक सतर्कता बुलेटिन तथा सार्वजनिक सूचना प्रकाशन`,
       };
 
+      let technicalAuditDetails = undefined;
+      let labTestDetails = undefined;
+
+      if (actType === 'prabidhik_parikshan') {
+        technicalAuditDetails = {
+          projectName: `${districtNe} सडक तथा पुल निर्माण आयोजना`,
+          relatedAgency: 'सडक विभाग / संघीय सडक सुपरिवेक्षण तथा अनुगमन कार्यालय',
+          projectNature: j % 2 === 0 ? 'सडक पूर्वाधार' : 'पुल निर्माण',
+          auditDate: `२०८३-०${monthIndex}-१५`,
+          status: (j % 3 === 0 ? 'chalu' : j % 3 === 1 ? 'pratibedan_pesh' : 'sampanna') as 'chalu' | 'pratibedan_pesh' | 'sampanna',
+          nonComplianceDetails: j % 2 === 0 ? 'सब-बेस तथा बेस कोर्सको मोटाइ र घनत्व सम्झौता मापदण्ड अनुसार नभएको। कङ्क्रिट क्युबको कम्प्रेसिभ स्ट्रेन्थ न्यून पाइएको।' : '',
+          reportDate: `२०८३-०${monthIndex}-२५`,
+          reportInformationDate: `२०८३-०${monthIndex}-२८`,
+          remarks: '७ दिनभित्र गुणस्तर सुधार गरी प्रयोगशाला परीक्षण प्रतिवेदन पेश गर्न निर्देशन दिइएको।',
+          auditorName: 'ई. प्रकाशचन्द्र ज्ञवाली',
+          auditorDesignation: 'सि.डि.ई. / प्राविधिक परीक्षक',
+          contractNo: `DRO-NVC-${toNepaliDigits(2083)}-${toNepaliDigits(j + 10)}`,
+          contractAmount: 48500000 + (j * 3200000),
+          consultantName: 'बी.सी.सी. इन्जिनियरिङ कन्सल्टेन्ट्स प्रा.लि.',
+          auditStage: 'during_construction' as const,
+          qualityRating: (j % 3 === 0 ? 'सुधार आवश्यक' : 'सन्तोषजनक') as 'सुधार आवश्यक' | 'सन्तोषजनक',
+          financialRecoveryAmount: j % 2 === 0 ? 1250000 + (j * 150000) : 0,
+          remedialDirectives: 'मापदण्ड विपरित भएको खण्ड पुनः परीक्षण गर्न र न्यून गुणस्तरको रकम भुक्तानीबाट कट्टा गर्न सिफारिस।',
+        };
+      } else if (actType === 'namuna_parikshan') {
+        const isFailed = j % 3 === 0 && j % 2 !== 0;
+        labTestDetails = {
+          sampleCode: `LAB-NVC-${toNepaliDigits(100 + j)}`,
+          sampleType: (j % 3 === 0 ? 'concrete_core' : j % 3 === 1 ? 'bitumen' : 'rebar_steel') as 'concrete_core' | 'bitumen' | 'rebar_steel',
+          sampleName: j % 3 === 0 ? 'कङ्क्रिट कम्प्रेसिभ स्ट्रेन्थ (M25)' : j % 3 === 1 ? 'बिटुमिन एक्स्ट्र्याक्सन (Asphalt Concrete)' : 'स्टिल रिबार तन्यता (Fe 500D)',
+          projectName: `${districtNe} राजमार्ग स्तरोन्नति तथा पुल निर्माण आयोजना`,
+          locationChainage: `Ch. ${toNepaliDigits(12 + j)}+${toNepaliDigits(200 + (j * 50))}`,
+          collectionDate: `२०८३-०${monthIndex}-०५`,
+          testedDate: `२०८३-०${monthIndex}-१०`,
+          technicianName: 'ई. कृष्णहरि शर्मा',
+          verifiedBy: 'सि.डि.ई. दिनेश भट्टराई',
+          specifiedStandard: j % 3 === 0 ? 'IS 516 / NS 161 (M25)' : j % 3 === 1 ? 'ASTM D2172 (VG-30)' : 'IS 1786 / NS 191',
+          requiredValue: j % 3 === 0 ? 25.0 : j % 3 === 1 ? 5.2 : 500.0,
+          obtainedValue: j % 3 === 0 ? (isFailed ? 22.4 : 26.8) : j % 3 === 1 ? 5.15 : 512.0,
+          unit: j % 3 === 1 ? '%' : 'N/mm²',
+          variancePercentage: j % 3 === 0 ? (isFailed ? -10.4 : 7.2) : -0.96,
+          result: (isFailed ? 'fail' : 'pass') as 'pass' | 'fail',
+          remarks: isFailed ? 'कम्प्रेसिभ स्ट्रेन्थ मापदण्ड भन्दा १०.४% न्यून देखिएकोले कङ्क्रिट संरचना अस्वीकृत।' : 'मापदण्ड अनुरुप गुणस्तरीय पाइएको।',
+        };
+      }
+
       activityRows.push({
         id: actId,
         refNo: `ACT-२०८३-${200 + j}`,
-        activityType: actType,
+        activityType: actType === 'namuna_parikshan' ? 'prabidhik_parikshan' : actType,
         title: titleMap[actType],
         entityName: `जिल्ला स्थित सरकारी निकाय / आयोजना कार्यालय, ${districtNe}`,
         districtEn,
@@ -379,6 +426,8 @@ export async function ensureInitialNvcSeedData(currentUid: string): Promise<void
         mahashakhaId: unit.mahashakhaId,
         shakhaId: unit.shakhaId,
         createdByUid: currentUid,
+        technicalAuditDetails,
+        labTestDetails,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });

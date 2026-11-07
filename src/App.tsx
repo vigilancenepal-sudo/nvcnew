@@ -56,6 +56,10 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  Clock,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 
 const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = {
@@ -111,7 +115,10 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const quickActionRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Supabase collections state
   const [allComplaints, setAllComplaints] = useState<ComplaintRecord[]>([]);
@@ -119,7 +126,7 @@ export default function App() {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Close profile dropdown on outside click
+  // Close profile and quick-action dropdowns on outside click
   useEffect(() => {
     const handler = (ev: MouseEvent) => {
       if (
@@ -128,9 +135,27 @@ export default function App() {
       ) {
         setProfileDropdownOpen(false);
       }
+      if (
+        quickActionRef.current &&
+        !quickActionRef.current.contains(ev.target as Node)
+      ) {
+        setQuickActionOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Global Ctrl+K / Cmd+K search shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // 1. Listen to Supabase Authentication
@@ -493,9 +518,9 @@ export default function App() {
 
               <div className="mt-8 pt-6 border-t border-blue-900 space-y-2 text-xs text-blue-200">
                 <div className="font-semibold text-white">संगठनात्मक संरचना (३ महाशाखा · १३ शाखा):</div>
-                <div>१. प्रशासन तथा सूचना सङ्कलन महाशाखा (७ शाखाहरू)</div>
-                <div>२. प्राविधिक परीक्षण तथा अनुगमन महाशाखा (५ शाखाहरू)</div>
-                <div>३. प्रहरी महाशाखा (प्रहरी शाखा)</div>
+                <div>प्रशासन तथा सूचना सङ्कलन महाशाखा (७ शाखाहरू)</div>
+                <div>प्राविधिक परीक्षण तथा अनुगमन महाशाखा (५ शाखाहरू)</div>
+                <div>प्रहरी महाशाखा (प्रहरी शाखा)</div>
               </div>
             </div>
 
@@ -582,27 +607,25 @@ export default function App() {
 
       {/* Left Sidebar Navigation (264px width) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-66 ${
-          sidebarCollapsed ? 'lg:w-16' : 'lg:w-66'
-        } bg-blue-950 text-slate-100 flex flex-col border-r border-blue-900 transition-[width,transform] duration-200 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:translate-x-0 ${
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-66 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-66'
+          } bg-gradient-to-b from-[#07172c] via-[#0b213f] to-[#061222] text-slate-100 flex flex-col border-r border-blue-900/80 transition-[width,transform] duration-200 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } shadow-xl`}
       >
         {/* Sidebar Header */}
-        <div className={`border-b border-blue-900 flex items-center justify-between gap-2 px-4 py-4 ${
-          sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-2' : ''
-        }`}>
-          <div className={`flex items-center gap-2.5 min-w-0 ${
-            sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
+        <div className={`border-b border-blue-900/80 flex items-center justify-between gap-2 px-3.5 py-3.5 ${sidebarCollapsed ? 'lg:flex-col lg:justify-center lg:px-2' : ''
           }`}>
-            <img
-              src="/coa.png"
-              alt="नेपालको राष्ट्रिय चिन्ह"
-              className="w-8 h-8 rounded object-contain shrink-0"
-            />
+          <div className={`flex items-center gap-2.5 min-w-0 ${sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
+            }`}>
+            <div className="w-8 h-8 rounded-lg bg-white/95 p-0.5 border border-white/30 shadow-2xs flex items-center justify-center shrink-0">
+              <img
+                src="/coa.png"
+                alt="नेपालको राष्ट्रिय निशान छाप"
+                className="w-7 h-7 object-contain"
+              />
+            </div>
             <div className={`min-w-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
-              <div className="text-[11px] text-blue-300 truncate">नेपाल सरकार</div>
-              <div className="text-sm font-bold text-white truncate">
+              <div className="text-[10px] uppercase font-bold text-red-300 tracking-wider">नेपाल सरकार</div>
+              <div className="text-xs sm:text-sm font-bold text-white truncate">
                 राष्ट्रिय सतर्कता केन्द्र
               </div>
             </div>
@@ -610,7 +633,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
-            className="hidden lg:flex items-center justify-center rounded p-1.5 text-blue-200 hover:bg-blue-900 hover:text-white cursor-pointer"
+            className="hidden lg:flex items-center justify-center rounded-lg p-1.5 text-blue-200 hover:bg-white/10 hover:text-white cursor-pointer transition-colors"
             aria-label={sidebarCollapsed ? 'साइडबार विस्तार गर्नुहोस्' : 'साइडबार संकुचित गर्नुहोस्'}
             title={sidebarCollapsed ? 'साइडबार विस्तार गर्नुहोस्' : 'साइडबार संकुचित गर्नुहोस्'}
           >
@@ -619,30 +642,31 @@ export default function App() {
           <button
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
-            className="lg:hidden text-blue-200 hover:text-white cursor-pointer"
+            className="lg:hidden text-blue-200 hover:text-white p-1 rounded-md hover:bg-white/10 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Active Unit Context Banner */}
-        <div className={`px-4 py-2.5 bg-blue-900/50 border-b border-blue-900 text-[11px] ${
-          sidebarCollapsed ? 'lg:hidden' : ''
-        }`}>
-          <div className="text-blue-300">सक्रिय कार्यक्षेत्र:</div>
+        <div className={`px-3.5 py-2.5 bg-blue-900/40 border-b border-blue-900/80 text-[11px] ${sidebarCollapsed ? 'lg:hidden' : ''
+          }`}>
+          <div className="text-blue-300 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            सक्रिय कार्यक्षेत्र:
+          </div>
           <div className="font-semibold text-white leading-snug mt-0.5">
             {effectiveRole === 'admin'
-              ? 'केन्द्रीय एडमिन (सबै महाशाखा/शाखा)'
+              ? 'केन्द्रीय प्रशासक (सबै महाशाखा/शाखा)'
               : effectiveRole === 'mahashakha'
-              ? getMahashakhaName(effectiveMahashakhaId)
-              : getShakhaName(effectiveShakhaId)}
+                ? getMahashakhaName(effectiveMahashakhaId)
+                : getShakhaName(effectiveShakhaId)}
           </div>
         </div>
 
         {/* Dynamic Role-Specific Menu List (Exact Specification a-g) */}
-        <nav className={`sidebar-menu-scroll flex-1 overflow-y-auto py-3 space-y-0.5 ${
-          sidebarCollapsed ? 'px-2' : 'px-2.5'
-        }`} aria-label="साइडबार मेनु">
+        <nav className={`sidebar-menu-scroll flex-1 overflow-y-auto py-3 space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-2.5'
+          }`} aria-label="साइडबार मेनु">
           {sidebarMenus.map((item) => {
             const IconComp = MENU_ICONS[item.id] || LayoutDashboard;
             const isActive = activeMenu === item.id;
@@ -656,27 +680,22 @@ export default function App() {
                 }}
                 title={sidebarCollapsed ? item.labelNe : undefined}
                 aria-label={item.labelNe}
-                className={`w-full flex items-center justify-between px-3 gap-2 py-2 rounded-md text-xs font-medium transition-colors text-left cursor-pointer ${
-                  sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
-                } ${
-                  isActive
-                    ? 'bg-red-700 text-white font-semibold'
-                    : 'text-blue-100 hover:bg-blue-900/70 hover:text-white'
-                }`}
+                className={`w-full flex items-center justify-between px-3 gap-2 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
+                  } ${isActive
+                    ? 'bg-red-700 text-white font-semibold shadow-xs'
+                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                  }`}
               >
-                <span className={`flex items-center gap-2.5 min-w-0 ${
-                  sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
-                }`}>
+                <span className={`flex items-center gap-2.5 min-w-0 ${sidebarCollapsed ? 'lg:justify-center lg:gap-0' : ''
+                  }`}>
                   <IconComp className="w-4 h-4 shrink-0" />
                   <span className={`truncate ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.labelNe}</span>
                 </span>
                 {item.id === 'complaints_all' && (
                   <span
-                    className={`font-mono-num text-[11px] shrink-0 ${
-                      sidebarCollapsed ? 'lg:hidden' : ''
-                    } ${
-                      isActive ? 'text-white' : 'text-red-300 font-semibold'
-                    }`}
+                    className={`font-mono-num text-[11px] px-1.5 py-0.2 rounded shrink-0 ${sidebarCollapsed ? 'lg:hidden' : ''
+                      } ${isActive ? 'bg-white/20 text-white' : 'bg-red-950/70 text-red-300 font-semibold'
+                      }`}
                   >
                     {toNepaliDigits(scopedComplaints.length)}
                   </span>
@@ -687,58 +706,227 @@ export default function App() {
         </nav>
 
         {/* Bottom Institutional Note */}
-        <div className={`p-3 border-t border-blue-900 text-[11px] text-blue-300 ${
-          sidebarCollapsed ? 'lg:hidden' : ''
-        }`}>
-          सिंहदरबार, हटलाइन: ०१४२००३४५
+        <div className={`p-3 border-t border-blue-900/80 text-[11px] text-blue-300/80 flex items-center justify-between ${sidebarCollapsed ? 'lg:hidden' : ''
+          }`}>
+          <span>सिंहदरबार, काठमाडौँ</span>
+          <span className="text-[10px] font-mono text-blue-300/60">v2.0</span>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar per Requirement h:
-            राष्ट्रिय सतर्कता केन्द्र, search bar, आ.व select dropdown, नेपाली मिति, role अनुसारको login को नाम र क्लिक गर्दा लगआउट option */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 lg:px-6 py-3">
+        {/* Top Official Sovereign Government Strip (नेपाल सरकारको आधिकारिक रिबन) */}
+        <div className="bg-gradient-to-r from-[#001f35] via-[#002b49] to-[#081b2e] text-slate-200 border-b-2 border-red-700 px-4 lg:px-6 py-1.5 text-[11px] shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 max-w-full">
+            <div className="flex items-center gap-2">
+              <img
+                src="/coa.png"
+                alt="नेपालको राष्ट्रिय निशान छाप"
+                className="w-4 h-4 object-contain shrink-0"
+              />
+              <span className="font-semibold text-white tracking-wide">
+                नेपाल सरकार
+              </span>
+              <span className="text-blue-300 hidden md:inline">|</span>
+              <span className="text-slate-300 hidden md:inline">
+                राष्ट्रिय सतर्कता केन्द्र (National Vigilance Centre)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 text-slate-300 text-[11px]">
+              <span className="hidden sm:inline">सिंहदरबार, काठमाडौँ</span>
+              <span className="text-blue-300 hidden sm:inline">·</span>
+              <span className="text-amber-300 font-semibold">हटलाइन: ४२००३४५</span>
+              <span className="text-blue-300">·</span>
+              <span className="text-slate-200 font-medium">मिति: {CURRENT_NEPALI_DATE_DISPLAY}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Modern Glassmorphic Appbar Header */}
+        <header className="sticky top-0 z-30 glass-header px-4 lg:px-6 py-2.5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Brand Title + Mobile Menu Trigger */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setMobileSidebarOpen(true)}
-                className="lg:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded cursor-pointer"
+                className="lg:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
                 aria-label="मेनु खोल्नुहोस्"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <span className="text-base sm:text-lg font-bold tracking-tight text-blue-950 whitespace-nowrap">
-                राष्ट्रिय सतर्कता केन्द्र
-              </span>
+
+              {/* Official Coat of Arms & Title (No NVC custom logo per instruction) */}
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/95 p-1 border border-slate-200 shadow-2xs flex items-center justify-center shrink-0">
+                  <img
+                    src="/coa.png"
+                    alt="नेपालको निशान छाप"
+                    className="w-7 h-7 object-contain"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-red-700 leading-tight">
+                    नेपाल सरकार
+                  </div>
+                  <div className="text-base sm:text-lg font-black tracking-tight text-blue-950 leading-tight">
+                    राष्ट्रिय सतर्कता केन्द्र
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Global Command / Quick Search Input */}
             <div className="relative flex-1 max-w-md min-w-[180px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
+                ref={searchInputRef}
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="उजुरी दर्ता नं., विषय, मन्त्रालय वा जिल्ला खोज्नुहोस्..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-900 transition-colors"
+                className="w-full pl-9 pr-14 py-1.5 text-xs bg-slate-100/70 hover:bg-white focus:bg-white border border-slate-200/90 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900/20 transition-all shadow-2xs"
               />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-200/70 rounded border border-slate-300/60 pointer-events-none">
+                  Ctrl K
+                </kbd>
+              )}
             </div>
 
-            {/* Right Controls: Fiscal Year Dropdown, Nepali Date, Role Login Name + Click Logout */}
-            <div className="flex items-center gap-3 shrink-0">
-              {/* आ.व. Select Dropdown */}
-              <div className="flex items-center gap-1.5">
-                <label htmlFor="fy-select" className="text-xs font-medium text-slate-600 hidden sm:inline">
+            {/* Right Controls: Quick Action, Fiscal Year, Profile Dropdown */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Quick Action Button & Glass Dropdown */}
+              <div className="relative" ref={quickActionRef}>
+                <button
+                  type="button"
+                  onClick={() => setQuickActionOpen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-800 rounded-lg shadow-xs hover:shadow transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">नयाँ प्रविष्टि</span>
+                  <ChevronDown className="w-3 h-3 text-red-200" />
+                </button>
+
+                {quickActionOpen && (
+                  <div className="absolute right-0 mt-1.5 w-56 glass-dropdown rounded-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-2.5 py-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                      शीघ्र प्रविष्टि (Quick Entry)
+                    </div>
+                    <div className="py-1 space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('new_complaint');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <FilePlus2 className="w-3.5 h-3.5 text-red-600" />
+                        नयाँ उजुरी दर्ता
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('office_monitoring');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-blue-700" />
+                        कार्यालय अनुगमन फारम
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('technical_audit');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <Compass className="w-3.5 h-3.5 text-indigo-700" />
+                        प्राविधिक परीक्षण विवरण
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('project_monitoring');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <HardHat className="w-3.5 h-3.5 text-emerald-700" />
+                        आयोजना अनुगमन फारम
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('new_sample');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <FlaskConical className="w-3.5 h-3.5 text-cyan-700" />
+                        प्रयोगशाला नमूना परीक्षण
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('promotional_program');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <Megaphone className="w-3.5 h-3.5 text-amber-700" />
+                        प्रवर्द्धनात्मक कार्यक्रम
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('citizen_charter');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                      >
+                        <ScrollText className="w-3.5 h-3.5 text-teal-700" />
+                        नागरिक बडापत्र अनुगमन
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickActionOpen(false);
+                          setActiveMenu('reports');
+                        }}
+                        className="w-full px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-950 font-medium rounded-lg flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100 pt-1.5 mt-1"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5 text-blue-900" />
+                        कार्यकारी आवधिक प्रतिवेदन
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Fiscal Year Glass Pill */}
+              <div className="flex items-center gap-1.5 glass-pill px-2.5 py-1 rounded-lg border border-slate-200">
+                <Calendar className="w-3.5 h-3.5 text-blue-900 hidden sm:inline" />
+                <label htmlFor="fy-select" className="text-xs font-semibold text-slate-600 hidden md:inline">
                   आ.व.:
                 </label>
                 <select
                   id="fy-select"
                   value={selectedFiscalYear}
                   onChange={(e) => setSelectedFiscalYear(e.target.value as FiscalYear)}
-                  className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-md text-slate-900 focus:outline-none focus:border-blue-900 cursor-pointer"
+                  className="text-xs font-bold bg-transparent text-blue-950 focus:outline-none cursor-pointer"
                 >
                   {FISCAL_YEARS.map((fy) => (
                     <option key={fy.value} value={fy.value}>
@@ -748,31 +936,33 @@ export default function App() {
                 </select>
               </div>
 
-              {/* नेपाली मिति */}
-              <div className="hidden xl:block text-xs text-slate-600 font-medium whitespace-nowrap border-l border-slate-200 pl-3">
-                मिति: {CURRENT_NEPALI_DATE_DISPLAY}
-              </div>
-
-              {/* Role अनुसारको Login को नाम र क्लिक गर्दा लगआउट Option */}
+              {/* Role अनुसारको Login Profile Dropdown */}
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors max-w-[260px] cursor-pointer"
+                  className="inline-flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200/80 rounded-lg border border-slate-200/80 transition-all max-w-[240px] cursor-pointer"
                 >
-                  <span className="truncate">{roleLoginDisplayName}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                    {userProfile.fullName ? userProfile.fullName.charAt(0) : 'U'}
+                  </div>
+                  <span className="truncate hidden sm:inline">{roleLoginDisplayName}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-500 shrink-0" />
                 </button>
 
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-2 z-50 text-xs">
+                  <div className="absolute right-0 mt-1.5 w-64 glass-dropdown rounded-xl py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3.5 py-2 border-b border-slate-100">
-                      <div className="font-bold text-slate-900">{userProfile.fullName}</div>
-                      <div className="text-slate-500 text-[11px] mt-0.5">
+                      <div className="font-bold text-slate-900 text-sm">{userProfile.fullName}</div>
+                      <div className="text-slate-600 text-[11px] mt-0.5 font-medium">
                         {userProfile.designation}
                       </div>
-                      <div className="text-slate-400 font-mono-num text-[11px] truncate">
-                        {userProfile.email}
+                      <div className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-900 border border-blue-200/60">
+                        {effectiveRole === 'admin'
+                          ? 'सुपर एडमिन (Super Admin)'
+                          : effectiveRole === 'mahashakha'
+                            ? 'महाशाखा प्रमुख'
+                            : 'शाखा अधिकृत'}
                       </div>
                     </div>
 
@@ -784,7 +974,7 @@ export default function App() {
                           setPreviewMode((p) => ({ ...p, enabled: false }));
                           setActiveMenu('user_management');
                         }}
-                        className="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                        className="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-blue-50 hover:text-blue-950 flex items-center gap-2 cursor-pointer transition-colors"
                       >
                         <Users className="w-3.5 h-3.5 text-blue-900" />
                         प्रयोगकर्ता व्यवस्थापन (RBAC)
@@ -794,7 +984,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full px-3.5 py-2 text-left text-red-700 hover:bg-red-50 font-semibold flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3.5 py-2 text-left text-red-700 hover:bg-red-50 font-semibold flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100 mt-1"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       लगआउट गर्नुहोस् (Logout)
@@ -806,16 +996,18 @@ export default function App() {
           </div>
         </header>
 
-        {/* Admin Interactive Role/Division/Branch Inspector Toolbar
-            Lets Admin seamlessly inspect any of the 3 Mahashakhas or 13 Shakhas to verify exact sidebar menus (a-g),
-            extra technical stat cards (i), and 3-tier RBAC data scoping */}
+        {/* Admin Interactive Role/Division/Branch Inspector Toolbar */}
         {userProfile.role === 'admin' && (
-          <div className="bg-slate-100 border-b border-slate-200 px-4 lg:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="glass-panel border-b border-slate-200/90 px-4 lg:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shadow-2xs">
             <div className="flex items-center gap-2 text-slate-700">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
+              </span>
               <Eye className="w-3.5 h-3.5 text-blue-900 shrink-0" />
-              <span className="font-semibold">एडमिन दृश्य परीक्षण (Role & महाशाखा/शाखा स्विचर):</span>
+              <span className="font-bold text-slate-900">(भूमिका तथा महाशाखा/शाखा स्विचर):</span>
               <span className="text-slate-500 hidden md:inline">
-                प्रत्येक महाशाखा र शाखाको विशिष्ट साइडबार मेनु र डेटा पहुँच जाँच गर्नुहोस्
+                विशिष्ट मेनु तथा ३-तहको RBAC डेटा पहुँच सिमुलेशन
               </span>
             </div>
 
@@ -834,11 +1026,11 @@ export default function App() {
                     }));
                   }
                 }}
-                className="px-2 py-1 bg-white border border-slate-300 rounded text-xs font-medium text-slate-800"
+                className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 shadow-2xs cursor-pointer"
               >
-                <option value="admin">१. एडमिन ड्यासबोर्ड (सबै तह)</option>
-                <option value="mahashakha">२. महाशाखा ड्यासबोर्ड (Division View)</option>
-                <option value="shakha">३. शाखा ड्यासबोर्ड (Shakha View)</option>
+                <option value="admin">एडमिन ड्यासबोर्ड</option>
+                <option value="mahashakha">महाशाखा ड्यासबोर्ड (Division View)</option>
+                <option value="shakha">शाखा ड्यासबोर्ड (Shakha View)</option>
               </select>
 
               {previewMode.enabled && (
@@ -855,7 +1047,7 @@ export default function App() {
                       shakhaId: firstShakha,
                     }));
                   }}
-                  className="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-800"
+                  className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 shadow-2xs cursor-pointer"
                 >
                   {MAHASHAKHAS.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -874,7 +1066,7 @@ export default function App() {
                       shakhaId: e.target.value as ShakhaId,
                     }))
                   }
-                  className="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-800"
+                  className="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 shadow-2xs cursor-pointer"
                 >
                   {SHAKHAS.filter(
                     (s) => s.mahashakhaId === previewMode.mahashakhaId
@@ -890,7 +1082,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setPreviewMode((p) => ({ ...p, enabled: false }))}
-                  className="px-2.5 py-1 bg-blue-950 text-white rounded text-xs font-medium cursor-pointer"
+                  className="px-2.5 py-1 bg-blue-950 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-blue-900 transition-colors"
                 >
                   एडमिनमा फर्कनुहोस्
                 </button>
@@ -932,6 +1124,8 @@ export default function App() {
               showExtraTechStats={showExtraTechStats}
               searchQuery={searchQuery}
               onNavigateMenu={setActiveMenu}
+              userRoleName={roleLoginDisplayName}
+              userFullName={userProfile.fullName}
             />
           ) : activeMenu === 'user_management' && effectiveRole === 'admin' ? (
             <UserManagementView
@@ -999,7 +1193,7 @@ export default function App() {
                 <p className="text-xs text-slate-500">
                   मिति: {toNepaliDigits(
                     startupNotice.noticePublicationDetails?.date ??
-                      startupNotice.nepaliDate
+                    startupNotice.nepaliDate
                   )}
                 </p>
                 <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">

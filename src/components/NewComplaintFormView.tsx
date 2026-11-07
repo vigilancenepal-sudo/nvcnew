@@ -519,7 +519,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+    <div className="glass-panel-elevated rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
       {/* Header Bar */}
       <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">

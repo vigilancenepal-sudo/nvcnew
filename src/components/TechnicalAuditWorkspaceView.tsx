@@ -13,6 +13,9 @@ import {
   Search,
   Trash2,
   X,
+  Coins,
+  ShieldCheck,
+  Building2,
 } from 'lucide-react';
 import { supabase } from '../supabase';
 import {
@@ -24,6 +27,8 @@ import {
   toNepaliDigits,
 } from '../data/nvcStructure';
 import { ActivityRecord, FiscalYear, TechnicalAuditDetails } from '../types/nvc';
+import { TechnicalAuditDossierModal } from './TechnicalAuditDossierModal';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -31,24 +36,40 @@ const FILE_ACCEPT = '.doc,.docx,.pdf,.jpg,.jpeg,.png';
 const MONTHS = NEPALI_MONTHS;
 const YEARS = ['२०८५', '२०८४', '२०८३', '२०८२', '२०८१', '२०८०', '२०७९'];
 const PROJECT_NATURES = [
-  'सिँचाइ',
-  'विद्युत',
-  'सडक',
-  'भवन',
-  'खानेपानी',
-  'पुल',
-  'अन्य',
+  'सडक पूर्वाधार',
+  'पुल निर्माण',
+  'सिँचाइ आयोजना',
+  'जलविद्युत आयोजना',
+  'सरकारी/सार्वजनिक भवन',
+  'खानेपानी तथा सरसफाइ',
+  'तटबन्ध तथा नदी नियन्त्रण',
+  'अन्य पूर्वाधार निर्माण',
 ];
+
+const AUDIT_STAGES = [
+  { value: 'during_construction', label: 'निर्माण कार्य भइरहेको अवस्था' },
+  { value: 'pre_construction', label: 'निर्माण पूर्व / डिजाइन तथा खरिद' },
+  { value: 'post_construction', label: 'निर्माण सम्पन्न पश्चात्' },
+] as const;
+
+const QUALITY_RATINGS = [
+  { value: 'उत्कृष्ट', label: 'उत्कृष्ट (Excellent)' },
+  { value: 'सन्तोषजनक', label: 'सन्तोषजनक (Satisfactory)' },
+  { value: 'सुधार आवश्यक', label: 'सुधार आवश्यक (Needs Improvement)' },
+  { value: 'गम्भीर त्रुटि', label: 'गम्भीर त्रुटि (Critical Non-compliance)' },
+] as const;
+
 const STATUS_OPTIONS: Array<{
   value: TechnicalAuditDetails['status'];
   label: string;
 }> = [
   { value: 'chalu', label: 'चालु' },
-  { value: 'sampanna', label: 'सम्पन्न' },
   { value: 'pratibedan_pesh', label: 'प्रतिवेदन पेश' },
+  { value: 'sampanna', label: 'सम्पन्न' },
 ];
+
 const inputClassName =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-700';
+  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all';
 
 const EMPTY_DETAILS: TechnicalAuditDetails = {
   projectName: '',
@@ -60,6 +81,15 @@ const EMPTY_DETAILS: TechnicalAuditDetails = {
   reportDate: '',
   reportInformationDate: '',
   remarks: '',
+  auditorName: '',
+  auditorDesignation: 'इन्जिनियर / प्राविधिक परीक्षक',
+  contractNo: '',
+  contractAmount: 0,
+  consultantName: '',
+  auditStage: 'during_construction',
+  qualityRating: 'सन्तोषजनक',
+  financialRecoveryAmount: 0,
+  remedialDirectives: '',
 };
 
 interface TechnicalAuditWorkspaceViewProps {
@@ -76,12 +106,18 @@ interface FieldProps {
   label: string;
   children: React.ReactNode;
   required?: boolean;
+  hint?: string;
 }
 
-const Field: React.FC<FieldProps> = ({ label, children, required }) => (
+const Field: React.FC<FieldProps> = ({ label, children, required, hint }) => (
   <label className="block text-xs font-medium text-slate-700">
-    {label}
-    {required && <span className="ml-1 text-red-600">*</span>}
+    <div className="flex items-center justify-between">
+      <span>
+        {label}
+        {required && <span className="ml-1 text-red-600 font-bold">*</span>}
+      </span>
+      {hint && <span className="text-[10px] text-slate-400 font-normal">{hint}</span>}
+    </div>
     <span className="mt-1.5 block">{children}</span>
   </label>
 );
@@ -109,14 +145,25 @@ const normalizeDetails = (activity: ActivityRecord): TechnicalAuditDetails => ({
     activity.technicalAuditDetails?.remarks ??
     activity.reportSummary ??
     '',
+  contractNo: activity.technicalAuditDetails?.contractNo ?? '',
+  contractAmount: activity.technicalAuditDetails?.contractAmount ?? 0,
+  auditorName: activity.technicalAuditDetails?.auditorName ?? '',
+  auditorDesignation: activity.technicalAuditDetails?.auditorDesignation ?? 'इन्जिनियर / प्राविधिक परीक्षक',
+  consultantName: activity.technicalAuditDetails?.consultantName ?? '',
+  auditStage: activity.technicalAuditDetails?.auditStage ?? 'during_construction',
+  qualityRating: activity.technicalAuditDetails?.qualityRating ?? 'सन्तोषजनक',
+  financialRecoveryAmount: activity.technicalAuditDetails?.financialRecoveryAmount ?? 0,
+  remedialDirectives: activity.technicalAuditDetails?.remedialDirectives ?? '',
 });
 
 const englishDigits = (value: string) =>
-  value.replace(/[०-९]/g, (digit) => String('०१२३४५६७८९'.indexOf(digit)));
+  value.replace(/[०-९]/g, (digit) => String('०१२३४५६८९'.indexOf(digit)));
+
 const dateParts = (value: string) => {
   const [year = '', month = '', day = ''] = englishDigits(value).split('-');
   return { year, month, day };
 };
+
 const formatDate = (date: string) => {
   if (!date) return '-';
   const { year, month, day } = dateParts(date);
@@ -125,17 +172,17 @@ const formatDate = (date: string) => {
     ? `${toNepaliDigits(year)} ${monthName} ${toNepaliDigits(Number(day))}`
     : toNepaliDigits(date);
 };
+
 const statusLabel = (status: TechnicalAuditDetails['status']) =>
   STATUS_OPTIONS.find((option) => option.value === status)?.label ?? 'चालु';
-const statusClassName = (status: TechnicalAuditDetails['status']) => {
-  if (status === 'sampanna') return 'bg-emerald-50 text-emerald-700';
-  if (status === 'pratibedan_pesh') return 'bg-blue-50 text-blue-700';
-  return 'bg-amber-50 text-amber-800';
+
+const statusBadgeClass = (status: TechnicalAuditDetails['status']) => {
+  if (status === 'sampanna') return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+  if (status === 'pratibedan_pesh') return 'bg-blue-50 text-blue-800 border-blue-300';
+  return 'bg-amber-50 text-amber-800 border-amber-300';
 };
 
-export const TechnicalAuditWorkspaceView: React.FC<
-  TechnicalAuditWorkspaceViewProps
-> = ({
+export const TechnicalAuditWorkspaceView: React.FC<TechnicalAuditWorkspaceViewProps> = ({
   activities,
   currentUid,
   effectiveMahashakhaId,
@@ -148,7 +195,7 @@ export const TechnicalAuditWorkspaceView: React.FC<
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityRecord | null>(null);
-  const [viewActivity, setViewActivity] = useState<ActivityRecord | null>(null);
+  const [dossierActivity, setDossierActivity] = useState<ActivityRecord | null>(null);
   const [details, setDetails] = useState<TechnicalAuditDetails>(EMPTY_DETAILS);
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
@@ -169,21 +216,35 @@ export const TechnicalAuditWorkspaceView: React.FC<
         ),
     [activities, selectedFiscalYear]
   );
+
   const thisMonthCount = audits.filter(
     (activity) => activity.monthIndex === CURRENT_NEPALI_MONTH_INDEX
   ).length;
+
   const inProgressCount = audits.filter(
     (activity) => normalizeDetails(activity).status === 'chalu'
   ).length;
+
   const completedCount = audits.filter(
     (activity) => normalizeDetails(activity).status === 'sampanna'
   ).length;
+
   const reportSubmittedCount = audits.filter(
     (activity) => normalizeDetails(activity).status === 'pratibedan_pesh'
   ).length;
+
   const ncrCount = audits.filter(
     (activity) => normalizeDetails(activity).nonComplianceDetails.trim()
   ).length;
+
+  const totalRecoveryAmount = useMemo(
+    () =>
+      audits.reduce(
+        (acc, item) => acc + (normalizeDetails(item).financialRecoveryAmount ?? 0),
+        0
+      ),
+    [audits]
+  );
 
   const shownAudits = audits.filter((activity) => {
     const record = normalizeDetails(activity);
@@ -193,6 +254,8 @@ export const TechnicalAuditWorkspaceView: React.FC<
       record.projectName,
       record.relatedAgency,
       record.projectNature,
+      record.contractNo ?? '',
+      record.auditorName ?? '',
       record.nonComplianceDetails,
       record.remarks,
       DISTRICT_NE_MAP[activity.districtEn] || activity.districtEn,
@@ -206,6 +269,7 @@ export const TechnicalAuditWorkspaceView: React.FC<
     setErrorMessage(null);
     setFormOpen(true);
   };
+
   const openEditForm = (activity: ActivityRecord) => {
     setEditingActivity(activity);
     setDetails(normalizeDetails(activity));
@@ -228,62 +292,19 @@ export const TechnicalAuditWorkspaceView: React.FC<
         : '',
     }));
   };
+
   const renderDateField = (
     field: 'auditDate' | 'reportDate' | 'reportInformationDate',
     label: string,
     required = false
   ) => {
-    const parts = dateParts(details[field]);
     return (
       <Field key={field} label={label} required={required}>
-        <div className="grid grid-cols-3 gap-1.5">
-          <select
-            required={required}
-            aria-label={`${label} साल`}
-            value={parts.year}
-            onChange={(event) =>
-              updateDate(field, 'year', englishDigits(event.target.value))
-            }
-            className={inputClassName}
-          >
-            <option value="">वर्ष</option>
-            {YEARS.map((year) => (
-              <option key={year} value={englishDigits(year)}>{year}</option>
-            ))}
-          </select>
-          <select
-            required={required}
-            aria-label={`${label} महिना`}
-            value={parts.month}
-            onChange={(event) =>
-              updateDate(field, 'month', event.target.value.padStart(2, '0'))
-            }
-            className={inputClassName}
-          >
-            <option value="">महिना</option>
-            {MONTHS.map((month, index) => (
-              <option key={month} value={String(index + 1).padStart(2, '0')}>
-                {month}
-              </option>
-            ))}
-          </select>
-          <select
-            required={required}
-            aria-label={`${label} गते`}
-            value={parts.day}
-            onChange={(event) =>
-              updateDate(field, 'day', event.target.value.padStart(2, '0'))
-            }
-            className={inputClassName}
-          >
-            <option value="">गते</option>
-            {Array.from({ length: 32 }, (_, index) => index + 1).map((day) => (
-              <option key={day} value={String(day).padStart(2, '0')}>
-                {toNepaliDigits(day)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <NepaliDatePicker
+          required={required}
+          value={details[field]}
+          onChange={(date) => setDetails((c) => ({ ...c, [field]: date }))}
+        />
       </Field>
     );
   };
@@ -308,13 +329,19 @@ export const TechnicalAuditWorkspaceView: React.FC<
       )?.id ??
       SHAKHAS.find((item) => item.mahashakhaId === mahashakhaId)?.id ??
       'shakha_tech_audit';
+
     const savedDetails: TechnicalAuditDetails = {
       ...details,
       projectName: details.projectName.trim(),
       relatedAgency: details.relatedAgency.trim(),
       nonComplianceDetails: details.nonComplianceDetails.trim(),
       remarks: details.remarks.trim(),
+      contractNo: details.contractNo?.trim() || '',
+      auditorName: details.auditorName?.trim() || '',
+      consultantName: details.consultantName?.trim() || '',
+      remedialDirectives: details.remedialDirectives?.trim() || '',
     };
+
     const date = savedDetails.auditDate || '';
     const uploadedPaths: string[] = [];
 
@@ -367,22 +394,18 @@ export const TechnicalAuditWorkspaceView: React.FC<
             .insert(savedRecord)
             .select('id')
             .maybeSingle();
+
       if (error) throw error;
       if (!data) throw new Error('प्राविधिक परीक्षण सुरक्षित गर्ने अनुमति छैन वा विवरण भेटिएन।');
+
       onActivitySaved(savedRecord);
       setFormOpen(false);
       setNotice(editingActivity ? 'प्राविधिक परीक्षण अद्यावधिक गरियो।' : 'नयाँ प्राविधिक परीक्षण सुरक्षित गरियो।');
     } catch (error) {
       if (uploadedPaths.length > 0) {
-        const { error: cleanupError } = await supabase.storage
-          .from(ATTACHMENT_BUCKET)
-          .remove(uploadedPaths);
-        if (cleanupError) {
-          console.error('Unable to remove partially uploaded technical audit files:', cleanupError);
-        }
+        await supabase.storage.from(ATTACHMENT_BUCKET).remove(uploadedPaths);
       }
       const message = error instanceof Error ? error.message : String(error);
-      console.error('Unable to save technical audit:', error);
       setErrorMessage(`प्राविधिक परीक्षण सुरक्षित गर्न सकिएन। ${message}`);
     } finally {
       setSaving(false);
@@ -390,37 +413,25 @@ export const TechnicalAuditWorkspaceView: React.FC<
   };
 
   const deleteAudit = async (activity: ActivityRecord) => {
-    if (!window.confirm('यो प्राविधिक परीक्षण अभिलेख मेटाउने?')) return;
+    const confirmation = window.confirm(
+      `के तपाईं "${normalizeDetails(activity).projectName || 'यो परीक्षण'}" हटाउन निश्चित हुनुहुन्छ?`
+    );
+    if (!confirmation) return;
+
     setDeletingId(activity.id);
-    setNotice(null);
     try {
-      const { data, error } = await supabase
-        .from('activities')
-        .delete()
-        .eq('id', activity.id)
-        .select('id')
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error('प्राविधिक परीक्षण मेटाउने अनुमति छैन वा विवरण भेटिएन।');
-      onActivityDeleted(activity.id);
-      const ownPaths = (activity.attachmentPaths ?? []).filter((path) =>
-        path.startsWith(`${currentUid}/`)
-      );
-      if (ownPaths.length) {
-        const { error: storageError } = await supabase.storage
+      if ((activity.attachmentPaths ?? []).length > 0) {
+        await supabase.storage
           .from(ATTACHMENT_BUCKET)
-          .remove(ownPaths);
-        if (storageError) {
-          console.error('Unable to remove technical audit attachments:', storageError);
-          setNotice(`अभिलेख मेटाइयो, तर संलग्न फाइल हटाउन सकिएन। ${storageError.message}`);
-          return;
-        }
+          .remove(activity.attachmentPaths ?? []);
       }
-      setNotice('प्राविधिक परीक्षण मेटाइयो।');
+      const { error } = await supabase.from('activities').delete().eq('id', activity.id);
+      if (error) throw error;
+      onActivityDeleted(activity.id);
+      setNotice('प्राविधिक परीक्षण सफलतापूर्वक हटाइयो।');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('Unable to delete technical audit:', error);
-      setNotice(`प्राविधिक परीक्षण मेटाउन सकिएन। ${message}`);
+      setNotice(`प्राविधिक परीक्षण हटाउन सकिएन। ${message}`);
     } finally {
       setDeletingId(null);
     }
@@ -439,280 +450,657 @@ export const TechnicalAuditWorkspaceView: React.FC<
       link.click();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error('Unable to access technical audit attachment:', error);
       setNotice(`संलग्न फाइल खोल्न सकिएन। ${message}`);
     }
   };
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
+      {/* Main Glass Panel Card */}
+      <section className="glass-panel rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+        {/* Header Strip */}
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 bg-white/70">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
-              <ClipboardCheck className="h-5 w-5" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white shadow-xs">
+              <ClipboardCheck className="h-6 w-6 text-blue-200" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">प्राविधिक परीक्षण</h2>
-              <p className="mt-0.5 text-xs text-slate-500">प्राविधिक परीक्षणको विवरण तथा अनुगमन</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  प्राविधिक परीक्षण महाशाखा (Technical Audit Workspace)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                  आ.व. {toNepaliDigits(selectedFiscalYear)}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500">
+                सार्वजनिक पूर्वाधार आयोजनाहरूको स्थलगत प्राविधिक गुणस्तर परीक्षण, NCR र वित्तीय असुली अनुगमन
+              </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-medium text-slate-600">
-              स्थिति:
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+              <span>स्थिति:</span>
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="ml-2 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-700"
+                className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
               >
-                <option value="">सबै</option>
+                <option value="">सबै स्थितिहरू</option>
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status.value} value={status.value}>{status.label}</option>
                 ))}
               </select>
             </label>
-            <label className="relative w-full sm:w-56">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+
+            <label className="relative w-full sm:w-60">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
                 aria-label="प्राविधिक परीक्षण खोज्नुहोस्"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="खोज्नुहोस्..."
-                className={`${inputClassName} pl-8`}
+                placeholder="आयोजना, निकाय वा ठेक्का नं..."
+                className={`${inputClassName} pl-9 py-2 rounded-xl`}
               />
             </label>
+
             <button
               type="button"
               onClick={openNewForm}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#002B49] px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-900 transition-colors shadow-xs"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               नयाँ प्राविधिक परीक्षण
             </button>
           </div>
         </header>
 
         {notice && (
-          <p role="status" className="mx-4 mt-3 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-            {notice}
-          </p>
+          <div role="status" className="mx-5 mt-3 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/90 px-4 py-2.5 text-xs text-blue-900">
+            <span>{notice}</span>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="text-blue-700 hover:text-blue-900 font-bold ml-2"
+            >
+              ✕
+            </button>
+          </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 xl:grid-cols-6">
+        {/* 6 High-Impact Glass Stat Tiles */}
+        <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3 xl:grid-cols-6">
           {[
-            { label: 'कूल परीक्षण', value: audits.length, icon: ClipboardCheck, color: 'text-blue-800 bg-blue-50' },
-            { label: 'यस महिनाका', value: thisMonthCount, icon: CalendarDays, color: 'text-cyan-800 bg-cyan-50' },
-            { label: 'चालु परीक्षण', value: inProgressCount, icon: Clock3, color: 'text-amber-800 bg-amber-50' },
-            { label: 'सम्पन्न परीक्षण', value: completedCount, icon: CheckCircle2, color: 'text-emerald-800 bg-emerald-50' },
-            { label: 'NCR उल्लेख', value: ncrCount, icon: AlertTriangle, color: 'text-orange-800 bg-orange-50' },
-            { label: 'प्रतिवेदन पेश', value: reportSubmittedCount, icon: FileText, color: 'text-indigo-800 bg-indigo-50' },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <article key={label} className="flex min-h-[78px] items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-xs">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${color}`}>
-                <Icon className="h-4 w-4" />
+            {
+              label: 'कुल परीक्षण',
+              value: audits.length,
+              icon: ClipboardCheck,
+              accent: 'border-blue-200 text-blue-900 bg-blue-50/70',
+              glow: 'hover:border-blue-400',
+            },
+            {
+              label: 'यस महिनाका',
+              value: thisMonthCount,
+              icon: CalendarDays,
+              accent: 'border-cyan-200 text-cyan-900 bg-cyan-50/70',
+              glow: 'hover:border-cyan-400',
+            },
+            {
+              label: 'चालु परीक्षण',
+              value: inProgressCount,
+              icon: Clock3,
+              accent: 'border-amber-200 text-amber-900 bg-amber-50/70',
+              glow: 'hover:border-amber-400',
+            },
+            {
+              label: 'सम्पन्न परीक्षण',
+              value: completedCount,
+              icon: CheckCircle2,
+              accent: 'border-emerald-200 text-emerald-900 bg-emerald-50/70',
+              glow: 'hover:border-emerald-400',
+            },
+            {
+              label: 'NCR कैफियत सहित',
+              value: ncrCount,
+              icon: AlertTriangle,
+              accent: 'border-orange-200 text-orange-900 bg-orange-50/70',
+              glow: 'hover:border-orange-400',
+            },
+            {
+              label: 'प्रतिवेदन पेश',
+              value: reportSubmittedCount,
+              icon: FileText,
+              accent: 'border-indigo-200 text-indigo-900 bg-indigo-50/70',
+              glow: 'hover:border-indigo-400',
+            },
+          ].map(({ label, value, icon: Icon, accent, glow }) => (
+            <article
+              key={label}
+              className={`stat-tile-glow flex items-center gap-3 rounded-xl border p-3.5 bg-white/80 backdrop-blur-xs transition-all ${accent} ${glow}`}
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-xs">
+                <Icon className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-[10px] text-slate-500">{label}</p>
-                <p className="mt-0.5 text-lg font-bold text-slate-900">{toNepaliDigits(value)}</p>
+                <p className="text-[11px] font-medium text-slate-500">{label}</p>
+                <p className="mt-0.5 text-xl font-black text-slate-900">
+                  {toNepaliDigits(value)}
+                </p>
               </div>
             </article>
           ))}
         </div>
 
-        <div className="overflow-x-auto px-3 pb-3">
-          <h3 className="px-2 py-2 text-sm font-bold text-blue-950">प्राविधिक परीक्षण सूची</h3>
-          <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50 font-semibold text-slate-600">
-                <th className="px-2.5 py-2.5">क्र.सं.</th>
-                <th className="px-2.5 py-2.5">आयोजनाको नाम</th>
-                <th className="px-2.5 py-2.5">सम्बन्धित निकाय</th>
-                <th className="px-2.5 py-2.5">आयोजनाको प्रकृति</th>
-                <th className="px-2.5 py-2.5">परीक्षण मिति</th>
-                <th className="px-2.5 py-2.5">अपरिपालनाहरू (NCR)</th>
-                <th className="px-2.5 py-2.5">डिस्पोजल पत्रको मिति</th>
-                <th className="px-2.5 py-2.5">डिस्पोजल जानकारी मिति</th>
-                <th className="px-2.5 py-2.5">कैफियत</th>
-                <th className="px-2.5 py-2.5">फाइल</th>
-                <th className="px-2.5 py-2.5">कार्य</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {shownAudits.length ? (
-                shownAudits.map((activity, index) => {
-                  const record = normalizeDetails(activity);
-                  return (
-                    <tr key={activity.id} className="align-top text-slate-700 hover:bg-slate-50/70">
-                      <td className="px-2.5 py-3">{toNepaliDigits(index + 1)}</td>
-                      <td className="max-w-40 px-2.5 py-3">
-                        <div className="font-semibold text-slate-900">{record.projectName}</div>
-                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClassName(record.status)}`}>
-                          {statusLabel(record.status)}
-                        </span>
-                      </td>
-                      <td className="max-w-36 px-2.5 py-3">{record.relatedAgency || '-'}</td>
-                      <td className="px-2.5 py-3">{record.projectNature || '-'}</td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{formatDate(record.auditDate)}</td>
-                      <td className="max-w-52 whitespace-pre-wrap px-2.5 py-3">{record.nonComplianceDetails || '-'}</td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{formatDate(record.reportDate)}</td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{formatDate(record.reportInformationDate)}</td>
-                      <td className="max-w-40 px-2.5 py-3">{record.remarks || '-'}</td>
-                      <td className="px-2.5 py-3">
-                        {(activity.attachmentPaths ?? []).length ? (
-                          <div className="flex flex-col gap-1">
-                            {(activity.attachmentPaths ?? []).map((path) => (
-                              <button key={path} type="button" onClick={() => openAttachment(path)} className="text-blue-700 hover:underline">
-                                हेर्नुहोस्
-                              </button>
-                            ))}
-                          </div>
-                        ) : '-'}
-                      </td>
-                      <td className="px-2.5 py-2">
-                        <div className="flex flex-col items-center gap-1">
-                          <button type="button" title="विवरण हेर्नुहोस्" onClick={() => setViewActivity(activity)} className="rounded p-1.5 text-slate-600 hover:bg-blue-50 hover:text-blue-800">
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                          <button type="button" title="सम्पादन" onClick={() => openEditForm(activity)} className="rounded p-1.5 text-slate-600 hover:bg-amber-50 hover:text-amber-800">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button type="button" title="मेटाउनुहोस्" disabled={deletingId === activity.id} onClick={() => deleteAudit(activity)} className="rounded p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={11} className="py-12 text-center text-slate-400">
-                    {audits.length ? 'फिल्टर वा खोजीसँग मिल्ने परीक्षण भेटिएन।' : 'हाल कुनै प्राविधिक परीक्षण दर्ता छैन।'}
-                  </td>
+        {/* Financial Recovery Highlight Strip */}
+        {totalRecoveryAmount > 0 && (
+          <div className="mx-5 mb-4 p-3.5 rounded-xl bg-gradient-to-r from-red-50 to-amber-50 border border-red-200/80 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-red-900">
+              <Coins className="h-4 w-4 text-red-600" />
+              <span className="font-semibold">
+                यस आ.व. मा प्राविधिक परीक्षणबाट सिफारिस कुल वित्तीय असुली/कम भुक्तानी रकम:
+              </span>
+            </div>
+            <span className="font-extrabold text-sm text-red-700 font-mono bg-white px-3 py-1 rounded-lg border border-red-200 shadow-2xs">
+              रु. {toNepaliDigits(totalRecoveryAmount.toLocaleString('en-IN'))}/-
+            </span>
+          </div>
+        )}
+
+        {/* Audits Table */}
+        <div className="overflow-x-auto px-4 pb-4">
+          <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+            <table className="w-full min-w-[1100px] border-collapse text-left text-xs">
+              <thead>
+                <tr className="bg-slate-100/90 font-bold text-slate-700 border-b border-slate-200">
+                  <th className="px-3.5 py-3">क्र.सं.</th>
+                  <th className="px-3.5 py-3">आयोजना एवं सम्झौता विवरण</th>
+                  <th className="px-3.5 py-3">सम्बन्धित निकाय</th>
+                  <th className="px-3.5 py-3">क्षेत्र / प्रकृति</th>
+                  <th className="px-3.5 py-3">परीक्षण मिति</th>
+                  <th className="px-3.5 py-3">गुणस्तर स्तर</th>
+                  <th className="px-3.5 py-3">अपरिपालनाहरू (NCR)</th>
+                  <th className="px-3.5 py-3">असुली सिफारिस (रु.)</th>
+                  <th className="px-3.5 py-3 text-center">डिजिटल मिसिल</th>
+                  <th className="px-3.5 py-3 text-center">कार्य</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {shownAudits.length ? (
+                  shownAudits.map((activity, index) => {
+                    const record = normalizeDetails(activity);
+                    const hasRecovery = (record.financialRecoveryAmount ?? 0) > 0;
+                    return (
+                      <tr
+                        key={activity.id}
+                        className="align-middle text-slate-700 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <td className="px-3.5 py-3.5 font-bold text-slate-500 font-mono">
+                          {toNepaliDigits(index + 1)}
+                        </td>
+                        <td className="max-w-64 px-3.5 py-3.5">
+                          <button
+                            type="button"
+                            onClick={() => setDossierActivity(activity)}
+                            className="font-bold text-slate-900 text-left hover:text-blue-800 hover:underline block leading-snug"
+                          >
+                            {record.projectName}
+                          </button>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold border ${statusBadgeClass(
+                                record.status
+                              )}`}
+                            >
+                              {statusLabel(record.status)}
+                            </span>
+                            {record.contractNo && (
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                ठेक्का: {toNepaliDigits(record.contractNo)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="max-w-44 px-3.5 py-3.5 font-medium text-slate-700">
+                          {record.relatedAgency || '-'}
+                        </td>
+                        <td className="px-3.5 py-3.5">
+                          <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            {record.projectNature || 'सडक/पुल'}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3.5 py-3.5 font-medium">
+                          {formatDate(record.auditDate)}
+                        </td>
+                        <td className="px-3.5 py-3.5">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                              record.qualityRating === 'उत्कृष्ट'
+                                ? 'bg-emerald-50 text-emerald-800'
+                                : record.qualityRating === 'गम्भीर त्रुटि'
+                                ? 'bg-red-50 text-red-800'
+                                : record.qualityRating === 'सुधार आवश्यक'
+                                ? 'bg-amber-50 text-amber-800'
+                                : 'bg-blue-50 text-blue-800'
+                            }`}
+                          >
+                            {record.qualityRating || 'सन्तोषजनक'}
+                          </span>
+                        </td>
+                        <td className="max-w-48 px-3.5 py-3.5">
+                          {record.nonComplianceDetails ? (
+                            <span className="line-clamp-2 text-slate-800 font-normal">
+                              {record.nonComplianceDetails}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">कुनै गम्भीर NCR छैन</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-3.5 py-3.5">
+                          {hasRecovery ? (
+                            <span className="font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                              रु. {toNepaliDigits(record.financialRecoveryAmount!.toLocaleString('en-IN'))}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setDossierActivity(activity)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[11px] transition-colors border border-blue-200 shadow-2xs"
+                          >
+                            <FileText className="h-3 w-3" />
+                            मिसिल हेर्नुहोस्
+                          </button>
+                        </td>
+                        <td className="px-3.5 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              title="सम्पादन गर्नुहोस्"
+                              onClick={() => openEditForm(activity)}
+                              className="rounded-lg p-1.5 text-slate-600 hover:bg-amber-50 hover:text-amber-800 transition-colors"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              title="मेटाउनुहोस्"
+                              disabled={deletingId === activity.id}
+                              onClick={() => deleteAudit(activity)}
+                              className="rounded-lg p-1.5 text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="py-12 text-center text-slate-400">
+                      {audits.length
+                        ? 'फिल्टर वा खोज्नुभएको विवरणसँग मिल्ने प्राविधिक परीक्षण फेला परेन।'
+                        : 'यस आर्थिक वर्षमा हालसम्म कुनै प्राविधिक परीक्षण दर्ता गरिएको छैन।'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <footer className="border-t border-slate-200 px-4 py-3 text-center text-xs text-slate-500">
-          आर्थिक वर्ष {toNepaliDigits(selectedFiscalYear)} · कुल रेकर्ड {toNepaliDigits(audits.length)}
+
+        <footer className="border-t border-slate-200/80 px-5 py-3.5 bg-slate-50/60 text-center text-xs font-medium text-slate-500">
+          नेपाल सरकार · राष्ट्रिय सतर्कता केन्द्र | प्राविधिक परीक्षण शाखा · आ.व. {toNepaliDigits(selectedFiscalYear)} · कुल {toNepaliDigits(audits.length)} अभिलेखहरू
         </footer>
       </section>
 
+      {/* Technical Audit Dossier Modal */}
+      {dossierActivity && (
+        <TechnicalAuditDossierModal
+          activity={dossierActivity}
+          onClose={() => setDossierActivity(null)}
+          onEdit={(act) => openEditForm(act)}
+          onOpenAttachment={(path) => openAttachment(path)}
+        />
+      )}
+
+      {/* New/Edit Modal Form */}
       {formOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div role="dialog" aria-modal="true" aria-labelledby="technical-audit-form-title" className="flex max-h-[96vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
-              <header className="flex items-center justify-between bg-slate-900 px-4 py-3 text-white">
-                <h3 id="technical-audit-form-title" className="text-sm font-bold">
-                  {editingActivity ? 'प्राविधिक परीक्षण सम्पादन' : 'नयाँ प्राविधिक परीक्षण थप्नुहोस्'}
-                </h3>
-                <button type="button" aria-label="बन्द गर्नुहोस्" disabled={saving} onClick={() => setFormOpen(false)} className="rounded p-1 text-white/75 hover:bg-white/10 hover:text-white">
-                  <X className="h-4 w-4" />
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="technical-audit-form-title"
+              className="flex max-h-[96vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200"
+            >
+              <header className="flex items-center justify-between bg-slate-900 px-6 py-4 text-white">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/30 text-blue-300 font-bold text-xs">
+                    NVC
+                  </span>
+                  <h3 id="technical-audit-form-title" className="text-sm font-bold">
+                    {editingActivity
+                      ? 'प्राविधिक परीक्षण अभिलेख सम्पादन'
+                      : 'नयाँ प्राविधिक परीक्षण प्रविष्टि'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  aria-label="बन्द गर्नुहोस्"
+                  disabled={saving}
+                  onClick={() => setFormOpen(false)}
+                  className="rounded-lg p-1.5 text-white/75 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
                 </button>
               </header>
+
               <form onSubmit={saveAudit} className="flex min-h-0 flex-1 flex-col">
-                <div className="space-y-3 overflow-y-auto p-4">
-                  <Field label="आयोजनाको नाम">
-                    <input required value={details.projectName} onChange={(event) => setDetails((current) => ({ ...current, projectName: event.target.value }))} placeholder="आयोजनाको नाम" className={inputClassName} />
-                  </Field>
-                  <Field label="सम्बन्धित निकाय">
-                    <input required value={details.relatedAgency} onChange={(event) => setDetails((current) => ({ ...current, relatedAgency: event.target.value }))} placeholder="सम्बन्धित निकायको नाम" className={inputClassName} />
-                  </Field>
-                  <Field label="आयोजनाको प्रकृति">
-                    <select required value={details.projectNature} onChange={(event) => setDetails((current) => ({ ...current, projectNature: event.target.value }))} className={inputClassName}>
-                      <option value="">छान्नुहोस्</option>
-                      {PROJECT_NATURES.map((nature) => <option key={nature}>{nature}</option>)}
-                    </select>
-                  </Field>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {renderDateField('auditDate', 'परीक्षण मिति', true)}
-                    <Field label="स्थिति">
-                      <select value={details.status} onChange={(event) => setDetails((current) => ({ ...current, status: event.target.value as TechnicalAuditDetails['status'] }))} className={inputClassName}>
-                        {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
+                <div className="space-y-4 overflow-y-auto p-6 text-xs">
+                  {/* Project Basic Info */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                    <h4 className="font-bold text-blue-950 text-xs flex items-center gap-1.5">
+                      <Building2 className="h-4 w-4 text-blue-800" />
+                      आयोजना तथा सम्झौताको विवरण
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Field label="आयोजनाको नाम" required>
+                        <input
+                          required
+                          value={details.projectName}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, projectName: e.target.value }))
+                          }
+                          placeholder="उदा: नागढुङ्गा सुरुङमार्ग निर्माण आयोजना"
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label="सम्बन्धित निकाय / मन्त्रालय" required>
+                        <input
+                          required
+                          value={details.relatedAgency}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, relatedAgency: e.target.value }))
+                          }
+                          placeholder="उदा: सडक विभाग / गुणस्तर, अनुसन्धान तथा विकास केन्द्र"
+                          className={inputClassName}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Field label="आयोजनाको प्रकृति" required>
+                        <select
+                          required
+                          value={details.projectNature}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, projectNature: e.target.value }))
+                          }
+                          className={inputClassName}
+                        >
+                          <option value="">छान्नुहोस्</option>
+                          {PROJECT_NATURES.map((nature) => (
+                            <option key={nature} value={nature}>
+                              {nature}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="ठेक्का / सम्झौता नम्बर">
+                        <input
+                          value={details.contractNo ?? ''}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, contractNo: e.target.value }))
+                          }
+                          placeholder="उदा: NVC/W/2083-01"
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label="स्वीकृत सम्झौता रकम (रु.)">
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={details.contractAmount ?? 0}
+                          onChange={(e) =>
+                            setDetails((c) => ({
+                              ...c,
+                              contractAmount: parseFloat(e.target.value) || 0,
+                            }))
+                          }
+                          placeholder="०.००"
+                          className={inputClassName}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Field label="परामर्शदाताको नाम">
+                        <input
+                          value={details.consultantName ?? ''}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, consultantName: e.target.value }))
+                          }
+                          placeholder="उदा: बी.सी.सी. इन्जिनियरिङ कन्सल्टेन्ट्स"
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label="परीक्षण चरण">
+                        <select
+                          value={details.auditStage ?? 'during_construction'}
+                          onChange={(e) =>
+                            setDetails((c) => ({
+                              ...c,
+                              auditStage: e.target.value as TechnicalAuditDetails['auditStage'],
+                            }))
+                          }
+                          className={inputClassName}
+                        >
+                          {AUDIT_STAGES.map((s) => (
+                            <option key={s.value} value={s.value}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                  </div>
+
+                  {/* Audit Team, Status & Dates */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                    <h4 className="font-bold text-blue-950 text-xs flex items-center gap-1.5">
+                      <ShieldCheck className="h-4 w-4 text-blue-800" />
+                      परीक्षण टोली, स्थिति तथा कार्यतालिका
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Field label="प्राविधिक परीक्षकको नाम">
+                        <input
+                          value={details.auditorName ?? ''}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, auditorName: e.target.value }))
+                          }
+                          placeholder="उदा: ई. प्रकाशचन्द्र ज्ञवाली"
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label="परीक्षकको पद">
+                        <input
+                          value={details.auditorDesignation ?? ''}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, auditorDesignation: e.target.value }))
+                          }
+                          placeholder="उदा: सि.डि.ई. / प्राविधिक परीक्षक"
+                          className={inputClassName}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {renderDateField('auditDate', 'स्थलगत परीक्षण मिति', true)}
+                      <Field label="परीक्षण स्थिति">
+                        <select
+                          value={details.status}
+                          onChange={(e) =>
+                            setDetails((c) => ({
+                              ...c,
+                              status: e.target.value as TechnicalAuditDetails['status'],
+                            }))
+                          }
+                          className={inputClassName}
+                        >
+                          {STATUS_OPTIONS.map((status) => (
+                            <option key={status.value} value={status.value}>
+                              {status.label}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {renderDateField('reportDate', 'डिस्पोजल पत्रको मिति')}
+                      {renderDateField('reportInformationDate', 'डिस्पोजल जानकारी मिति')}
+                    </div>
+                  </div>
+
+                  {/* Non-compliance & Quality Rating */}
+                  <div className="rounded-xl border border-red-200 bg-red-50/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-red-950 text-xs flex items-center gap-1.5">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        अपरिपालनाहरू (NCR) तथा गुणस्तर स्तरीकरण
+                      </h4>
+                      <div className="w-56">
+                        <select
+                          value={details.qualityRating ?? 'सन्तोषजनक'}
+                          onChange={(e) =>
+                            setDetails((c) => ({
+                              ...c,
+                              qualityRating: e.target.value as TechnicalAuditDetails['qualityRating'],
+                            }))
+                          }
+                          className={inputClassName}
+                        >
+                          {QUALITY_RATINGS.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <Field
+                      label="अपरिपालना विवरण (Non-Compliance Report - NCR)"
+                      hint="डिजाइन, सामग्री वा मापदण्ड विपरित भएका कैफियतहरू"
+                    >
+                      <textarea
+                        rows={3}
+                        value={details.nonComplianceDetails}
+                        onChange={(e) =>
+                          setDetails((c) => ({
+                            ...c,
+                            nonComplianceDetails: e.target.value,
+                          }))
+                        }
+                        placeholder="विस्तृत NCR कैफियत लेख्नुहोस्..."
+                        className={`${inputClassName} resize-y`}
+                      />
                     </Field>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field
+                        label="असुली वा कम भुक्तानी गर्नुपर्ने रकम (रु.)"
+                        hint="मापदण्ड विपरित पाइएको कार्यको मूल्यांकन रकम"
+                      >
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={details.financialRecoveryAmount ?? 0}
+                          onChange={(e) =>
+                            setDetails((c) => ({
+                              ...c,
+                              financialRecoveryAmount: parseFloat(e.target.value) || 0,
+                            }))
+                          }
+                          placeholder="०.००"
+                          className={inputClassName}
+                        />
+                      </Field>
+                      <Field label="सुधारात्मक निर्देशनहरू (Remedial Directives)">
+                        <input
+                          value={details.remedialDirectives ?? ''}
+                          onChange={(e) =>
+                            setDetails((c) => ({ ...c, remedialDirectives: e.target.value }))
+                          }
+                          placeholder="उदा: म्याद थप रद्द, परीक्षण पुनः गर्न निर्देशन"
+                          className={inputClassName}
+                        />
+                      </Field>
+                    </div>
                   </div>
-                  <Field label="अपरिपालनाहरू (NCR)">
-                    <textarea rows={3} value={details.nonComplianceDetails} onChange={(event) => setDetails((current) => ({ ...current, nonComplianceDetails: event.target.value }))} placeholder="NCR हरू लेख्नुहोस्..." className={`${inputClassName} resize-y`} />
+
+                  {/* Remarks & Files */}
+                  <Field label="समग्र कैफियत / अवलोकन निष्कर्ष">
+                    <textarea
+                      rows={2}
+                      value={details.remarks}
+                      onChange={(e) =>
+                        setDetails((c) => ({ ...c, remarks: e.target.value }))
+                      }
+                      placeholder="केन्द्रको अन्तिम निर्णय वा अन्य विवरण..."
+                      className={`${inputClassName} resize-y`}
+                    />
                   </Field>
-                  <div className="flex justify-start">
-                    <button type="button" onClick={() => setDetails((current) => ({ ...current, nonComplianceDetails: current.nonComplianceDetails ? `${current.nonComplianceDetails}\n` : '' }))} className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-100">
-                      NCR थप्नुहोस्
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {renderDateField('reportDate', 'डिस्पोजल पत्रको मिति')}
-                    {renderDateField('reportInformationDate', 'डिस्पोजल जानकारी मिति')}
-                  </div>
-                  <Field label="कैफियत">
-                    <textarea rows={3} value={details.remarks} onChange={(event) => setDetails((current) => ({ ...current, remarks: event.target.value }))} placeholder="कैफियत लेख्नुहोस्..." className={`${inputClassName} resize-y`} />
+
+                  <Field label="फाइल तथा प्राविधिक प्रतिवेदन संलग्न गर्नुहोस् (Word, PDF, JPEG)">
+                    <input
+                      type="file"
+                      multiple
+                      accept={FILE_ACCEPT}
+                      onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                      className={inputClassName}
+                    />
+                    <span className="mt-1 block text-[10px] text-slate-500">
+                      doc, docx, pdf, jpg, jpeg, png · प्रति फाइल अधिकतम २० MB
+                    </span>
                   </Field>
-                  <Field label="फाइल संलग्न गर्नुहोस् (Word, PDF, JPEG)">
-                    <input type="file" multiple accept={FILE_ACCEPT} onChange={(event) => setFiles(Array.from(event.target.files ?? []))} className={inputClassName} />
-                    <span className="mt-1 block text-[10px] font-normal text-slate-500">doc, docx, pdf, jpg, jpeg, png · प्रति फाइल अधिकतम २० MB</span>
-                  </Field>
-                  {editingActivity && (editingActivity.attachmentPaths ?? []).length > 0 && (
-                    <p className="text-[10px] text-slate-500">पहिलेका संलग्न फाइलहरू सुरक्षित रहनेछन्।</p>
-                  )}
+
                   {errorMessage && (
-                    <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">{errorMessage}</p>
+                    <p
+                      role="alert"
+                      className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800"
+                    >
+                      {errorMessage}
+                    </p>
                   )}
                 </div>
-                <footer className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
-                  <button type="button" disabled={saving} onClick={() => setFormOpen(false)} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700">रद्द गर्नुहोस्</button>
-                  <button type="submit" disabled={saving} className="rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60">{saving ? 'सुरक्षित हुँदैछ...' : 'सुरक्षित गर्नुहोस्'}</button>
+
+                <footer className="flex justify-end gap-2.5 border-t border-slate-200 bg-slate-50 px-6 py-3.5">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setFormOpen(false)}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                  >
+                    रद्द गर्नुहोस्
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded-xl bg-[#002B49] px-5 py-2 text-xs font-bold text-white hover:bg-blue-900 transition-colors shadow-xs disabled:opacity-60"
+                  >
+                    {saving ? 'सुरक्षित हुँदैछ...' : 'सुरक्षित गर्नुहोस्'}
+                  </button>
                 </footer>
               </form>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {viewActivity &&
-        createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div role="dialog" aria-modal="true" aria-labelledby="technical-audit-detail-title" className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl">
-              {(() => {
-                const record = normalizeDetails(viewActivity);
-                return (
-                  <>
-                    <header className="flex items-center justify-between bg-slate-900 px-4 py-3 text-white">
-                      <h3 id="technical-audit-detail-title" className="text-sm font-bold">प्राविधिक परीक्षण विवरण</h3>
-                      <button type="button" aria-label="बन्द गर्नुहोस्" onClick={() => setViewActivity(null)} className="rounded p-1 text-white/75 hover:bg-white/10"><X className="h-4 w-4" /></button>
-                    </header>
-                    <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
-                      {[
-                        ['आयोजनाको नाम', record.projectName],
-                        ['सम्बन्धित निकाय', record.relatedAgency],
-                        ['आयोजनाको प्रकृति', record.projectNature],
-                        ['परीक्षण मिति', formatDate(record.auditDate)],
-                        ['स्थिति', statusLabel(record.status)],
-                        ['डिस्पोजल पत्रको मिति', formatDate(record.reportDate)],
-                        ['डिस्पोजल जानकारी मिति', formatDate(record.reportInformationDate)],
-                        ['अपरिपालनाहरू (NCR)', record.nonComplianceDetails],
-                        ['कैफियत', record.remarks],
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                          <div className="font-semibold text-slate-500">{label}</div>
-                          <div className="mt-1 whitespace-pre-wrap text-slate-800">{value || '-'}</div>
-                        </div>
-                      ))}
-                      {(viewActivity.attachmentPaths ?? []).length > 0 && (
-                        <div className="sm:col-span-2">
-                          <h4 className="mb-2 text-xs font-bold text-slate-700">संलग्न फाइलहरू</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {(viewActivity.attachmentPaths ?? []).map((path) => (
-                              <button key={path} type="button" onClick={() => openAttachment(path)} className="rounded border border-slate-200 px-3 py-2 text-xs text-blue-800 hover:bg-blue-50">{path.split('/').pop()}</button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
             </div>
           </div>,
           document.body

@@ -126,7 +126,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
     : null);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
+    <div className="glass-panel rounded-2xl p-5 flex flex-col justify-between border border-slate-200/90 shadow-xs">
       <div className="flex flex-wrap items-start justify-between gap-4 pb-3 border-b border-slate-100">
         <div>
           <h3 className="text-base font-semibold text-slate-900">{title}</h3>

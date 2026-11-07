@@ -4,6 +4,8 @@ import { Eye, FileText, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import { ActivityRecord, FiscalYear, NoticePublicationDetails } from '../types/nvc';
 import { MAHASHAKHAS, SHAKHAS, toNepaliDigits } from '../data/nvcStructure';
+import { NoticePublicationDossierModal } from './NoticePublicationDossierModal';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 interface NoticePublicationWorkspaceViewProps {
   activities: ActivityRecord[];
@@ -181,7 +183,7 @@ export const NoticePublicationWorkspaceView: React.FC<
 
   return (
     <div className="space-y-4">
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+      <section className="glass-panel overflow-hidden rounded-xl shadow-xs">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
@@ -309,18 +311,18 @@ export const NoticePublicationWorkspaceView: React.FC<
               </header>
               <form onSubmit={saveNotice}>
                 <div className="space-y-4 p-5">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    मिति<span className="ml-1 text-red-600">*</span>
-                    <input
+                  <div className="block text-xs font-semibold text-slate-700">
+                    <span className="block mb-1">
+                      मिति<span className="ml-1 text-red-600">*</span>
+                    </span>
+                    <NepaliDatePicker
                       required
-                      type="date"
                       value={form.date}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, date: event.target.value }))
+                      onChange={(date) =>
+                        setForm((current) => ({ ...current, date }))
                       }
-                      className={`${inputClassName} mt-1.5`}
                     />
-                  </label>
+                  </div>
                   <label className="block text-xs font-semibold text-slate-700">
                     शीर्षक<span className="ml-1 text-red-600">*</span>
                     <input
@@ -379,44 +381,16 @@ export const NoticePublicationWorkspaceView: React.FC<
           document.body
         )}
 
-      {viewActivity &&
-        createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="notice-detail-title"
-              className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl"
-            >
-              {(() => {
-                const details = detailsFor(viewActivity);
-                return (
-                  <>
-                    <header className="flex items-center justify-between border-b border-slate-200 bg-blue-950 px-5 py-3 text-white">
-                      <h3 id="notice-detail-title" className="text-sm font-bold">सूचना विवरण</h3>
-                      <button
-                        type="button"
-                        aria-label="बन्द गर्नुहोस्"
-                        onClick={() => setViewActivity(null)}
-                        className="rounded p-1 text-white/70 hover:bg-white/10 hover:text-white"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </header>
-                    <div className="space-y-3 p-5">
-                      <p className="text-xs text-slate-500">{formatDate(details.date)}</p>
-                      <h4 className="text-base font-bold text-slate-900">{details.title}</h4>
-                      <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                        {details.description || '-'}
-                      </p>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
+      {viewActivity && (
+        <NoticePublicationDossierModal
+          activity={viewActivity}
+          onClose={() => setViewActivity(null)}
+          onEdit={(act) => {
+            setViewActivity(null);
+            openEditForm(act);
+          }}
+        />
+      )}
     </div>
   );
 };

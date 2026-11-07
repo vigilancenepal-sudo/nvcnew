@@ -33,6 +33,7 @@ import { PromotionalProgramWorkspaceView } from './PromotionalProgramWorkspaceVi
 import { NoticePublicationWorkspaceView } from './NoticePublicationWorkspaceView';
 import { ProjectMonitoringWorkspaceView } from './ProjectMonitoringWorkspaceView';
 import { TechnicalAuditWorkspaceView } from './TechnicalAuditWorkspaceView';
+import { LabTestingWorkspaceView } from './LabTestingWorkspaceView';
 
 interface ModuleWorkspaceViewProps {
   activeMenu: MenuId;
@@ -285,64 +286,25 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
     );
   }
 
-  // ४. प्रयोगशाला नयाँ नमूना दर्ता
+  // ४. प्रयोगशाला परीक्षण शाखा (Materials Testing LIMS)
   if (activeMenu === 'new_sample') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg p-6 w-full">
-        <h2 className="text-base font-bold text-slate-900">
-          नयाँ प्रयोगशाला नमूना दर्ता (प्रयोगशाला परीक्षण शाखा)
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          सडक, पुल, भवन तथा सिँचाइ आयोजनाबाट संकलित निर्माण सामग्रीको नमूना प्रविष्टि
-        </p>
-        {notice && (
-          <div className="mt-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-900">
-            {notice}
-          </div>
-        )}
-        <form onSubmit={handleCreateLabSample} className="mt-4 space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              नमूना विवरण / परीक्षण प्रकार *
-            </label>
-            <input
-              type="text"
-              required
-              value={sampleTitle}
-              onChange={(e) => setSampleTitle(e.target.value)}
-              placeholder="उदा: कङ्क्रिट कम्प्रेसिभ स्ट्रेन्थ / बिटुमिन एक्स्ट्र्याक्सन परीक्षण"
-              className="w-full px-3 py-2 border border-slate-200 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              आयोजना / कार्यालयको नाम *
-            </label>
-            <input
-              type="text"
-              required
-              value={sampleEntity}
-              onChange={(e) => setSampleEntity(e.target.value)}
-              placeholder="उदा: मध्यपहाडी लोकमार्ग आयोजना कार्यालय"
-              className="w-full px-3 py-2 border border-slate-200 rounded-md"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 bg-blue-950 text-white font-semibold rounded-md cursor-pointer"
-          >
-            {saving ? 'दर्ता हुँदैछ...' : 'नमूना दर्ता गर्नुहोस्'}
-          </button>
-        </form>
-      </div>
+      <LabTestingWorkspaceView
+        activities={activities}
+        currentUid={currentUid}
+        effectiveMahashakhaId={effectiveMahashakhaId}
+        effectiveShakhaId={effectiveShakhaId}
+        selectedFiscalYear={selectedFiscalYear}
+        onActivitySaved={onActivitySaved}
+        onActivityDeleted={onActivityDeleted}
+      />
     );
   }
 
   // ५. क्यालेन्डर
   if (activeMenu === 'calendar') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <div className="glass-panel rounded-2xl p-6 shadow-xs">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-blue-900" />
@@ -392,7 +354,7 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
   // ६. पासवर्ड परिवर्तन / सेटिङ्गस्
   if (activeMenu === 'change_password' || activeMenu === 'settings') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg p-6 w-full">
+      <div className="glass-panel rounded-2xl p-6 shadow-xs w-full">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           {activeMenu === 'change_password' ? (
             <Lock className="w-5 h-5 text-blue-900" />
@@ -441,7 +403,7 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
     : activities;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5">
+    <div className="glass-panel rounded-2xl p-6 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-blue-900" />

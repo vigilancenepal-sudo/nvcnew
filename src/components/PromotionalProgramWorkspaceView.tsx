@@ -41,6 +41,8 @@ import {
 } from '../data/nvcStructure';
 import { ActivityRecord, FiscalYear, PromotionalProgramDetails } from '../types/nvc';
 import { NepalChoroplethMap } from './NepalChoroplethMap';
+import { PromotionalProgramDossierModal } from './PromotionalProgramDossierModal';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -534,20 +536,20 @@ export const PromotionalProgramWorkspaceView: React.FC<
           { title: 'सम्पन्न कार्यक्रम', count: completedPrograms.length, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-800' },
           { title: 'सहभागी संख्या', count: totalParticipants, icon: Users, color: 'bg-cyan-50 text-cyan-800' },
         ].map(({ title, count, icon: Icon, color }) => (
-          <article key={title} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+          <article key={title} className="glass-panel stat-tile-glow flex items-center gap-3 rounded-xl p-4">
             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
               <Icon className="h-5 w-5" />
             </span>
             <div>
               <p className="text-[11px] text-slate-500">{title}</p>
-              <p className="mt-0.5 text-xl font-bold text-slate-900">{toNepaliDigits(count)}</p>
+              <p className="mt-0.5 text-xl font-bold text-slate-900 font-mono-num">{toNepaliDigits(count)}</p>
             </div>
           </article>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <section className="glass-panel rounded-xl p-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-blue-950">कार्यक्रम तालिका</h3>
             <div className="flex items-center gap-2">
@@ -630,7 +632,7 @@ export const PromotionalProgramWorkspaceView: React.FC<
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <section className="glass-panel rounded-xl p-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-blue-950">कार्यक्रम सूची</h3>
             <label className="relative w-full max-w-56">
@@ -723,7 +725,7 @@ export const PromotionalProgramWorkspaceView: React.FC<
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <section className="glass-panel rounded-xl p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold text-blue-950">आगामी कार्यक्रम</h3>
             <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-800">
@@ -762,7 +764,7 @@ export const PromotionalProgramWorkspaceView: React.FC<
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+        <section className="glass-panel rounded-xl p-4">
           <h3 className="text-sm font-bold text-blue-950">सम्पन्न कार्यक्रमका झलक</h3>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {photoPrograms.length ? (
@@ -896,52 +898,13 @@ export const PromotionalProgramWorkspaceView: React.FC<
                   </Field>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Field label="मिति" required>
-                      <div className="grid grid-cols-3 gap-2">
-                        <select
-                          required
-                          aria-label="साल"
-                          value={dateParts.year}
-                          onChange={(event) => updateDate('year', event.target.value)}
-                          className={inputClassName}
-                        >
-                          <option value="">साल</option>
-                          {NEPALI_YEARS.map((year) => (
-                            <option key={year} value={englishDigits(year)}>{year}</option>
-                          ))}
-                        </select>
-                        <select
-                          required
-                          aria-label="महिना"
-                          value={dateParts.month}
-                          onChange={(event) =>
-                            updateDate('month', event.target.value.padStart(2, '0'))
-                          }
-                          className={inputClassName}
-                        >
-                          <option value="">महिना</option>
-                          {NEPALI_MONTHS.map((month, index) => (
-                            <option key={month} value={String(index + 1).padStart(2, '0')}>
-                              {month}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          required
-                          aria-label="गते"
-                          value={dateParts.day}
-                          onChange={(event) =>
-                            updateDate('day', event.target.value.padStart(2, '0'))
-                          }
-                          className={inputClassName}
-                        >
-                          <option value="">गते</option>
-                          {Array.from({ length: 32 }, (_, index) => index + 1).map((day) => (
-                            <option key={day} value={String(day).padStart(2, '0')}>
-                              {toNepaliDigits(day)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <NepaliDatePicker
+                        required
+                        value={details.date}
+                        onChange={(date) =>
+                          setDetails((current) => ({ ...current, date }))
+                        }
+                      />
                     </Field>
                     <Field label="स्थान">
                       <input
@@ -1146,79 +1109,17 @@ export const PromotionalProgramWorkspaceView: React.FC<
           document.body
         )}
 
-      {viewActivity &&
-        createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="promotional-program-detail-title"
-              className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl"
-            >
-              {(() => {
-                const record = normalizedDetails(viewActivity);
-                return (
-                  <>
-                    <header className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
-                      <div>
-                        <h3 id="promotional-program-detail-title" className="text-sm font-bold text-slate-900">
-                          कार्यक्रम विवरण
-                        </h3>
-                        <p className="mt-0.5 text-xs text-slate-500">{record.programName}</p>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="बन्द गर्नुहोस्"
-                        onClick={() => setViewActivity(null)}
-                        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </header>
-                    <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
-                      {[
-                        ['प्रस्तावित आर्थिक वर्ष', `आ.व. ${toNepaliDigits(record.plannedFiscalYear)}`],
-                        ['मिति', formatDate(record.date)],
-                        ['स्थान', record.location],
-                        ['जिल्ला', DISTRICT_NE_MAP[record.districtEn] || record.districtEn],
-                        ['प्रदेश', getProvinceForDistrict(record.districtEn)],
-                        ['स्थानीय तह', record.localLevel],
-                        ['लक्षित समूह', record.targetGroup],
-                        ['सहभागी संख्या', toNepaliDigits(record.participantCount)],
-                        ['स्थिति', statusLabel(record.status)],
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
-                          <div className="font-semibold text-slate-500">{label}</div>
-                          <div className="mt-1 text-slate-800">{value || '-'}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {(viewActivity.attachmentPaths ?? []).length > 0 && (
-                      <div className="px-5 pb-5">
-                        <h4 className="mb-2 text-xs font-bold text-slate-700">तस्वीरहरू</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {(viewActivity.attachmentPaths ?? [])
-                            .filter((path) => /\.(png|jpe?g)$/i.test(path))
-                            .map((path) => (
-                              <button
-                                key={path}
-                                type="button"
-                                onClick={() => openProgramPhoto(path)}
-                                className="rounded-md border border-slate-200 px-3 py-2 text-xs text-blue-800 hover:bg-blue-50"
-                              >
-                                तस्वीर हेर्नुहोस्
-                              </button>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
+      {viewActivity && (
+        <PromotionalProgramDossierModal
+          activity={viewActivity}
+          onClose={() => setViewActivity(null)}
+          onEdit={(act) => {
+            setViewActivity(null);
+            openEditForm(act);
+          }}
+          onOpenAttachment={(path) => openProgramPhoto(path)}
+        />
+      )}
     </div>
   );
 };

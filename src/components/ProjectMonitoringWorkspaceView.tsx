@@ -52,6 +52,8 @@ import {
   ProjectMonitoringTeamMember,
 } from '../types/nvc';
 import { NepalChoroplethMap } from './NepalChoroplethMap';
+import { ProjectMonitoringDossierModal } from './ProjectMonitoringDossierModal';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -602,30 +604,37 @@ export const ProjectMonitoringWorkspaceView: React.FC<
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <header className="glass-panel rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
-              <MapPin className="h-5 w-5" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white shadow-xs">
+              <MapPin className="h-6 w-6 text-blue-200" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">आयोजना अनुगमन विश्लेषण ड्यासबोर्ड</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  आयोजना अनुगमन महाशाखा (Project Monitoring Workspace)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                  आ.व. {toNepaliDigits(selectedFiscalYear)}
+                </span>
+              </div>
               <p className="mt-0.5 text-xs text-slate-500">
-                भौतिक प्रगति, बजेट उपयोग र अनुगमन निष्कर्षको अवस्था
+                सार्वजनिक पूर्वाधार आयोजनाहरूको स्थलगत भौतिक प्रगति, खर्च दक्षता र ५-आयामीय गुणस्तर अनुगमन
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={openNewForm}
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#002B49] px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-900 transition-colors shadow-xs"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             नयाँ आयोजना अनुगमन
           </button>
         </div>
         {notice && (
-          <p role="status" className="mt-3 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+          <p role="status" className="mt-3 rounded-xl border border-blue-200 bg-blue-50/90 px-4 py-2.5 text-xs text-blue-900">
             {notice}
           </p>
         )}
@@ -713,21 +722,21 @@ export const ProjectMonitoringWorkspaceView: React.FC<
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
-          { label: 'कूल आयोजना', value: filteredDashboardProjects.length, icon: CalendarDays, color: 'bg-blue-50 text-blue-800' },
-          { label: 'स्वीकृत लागत', value: amountLabel(totalBudget), icon: FileText, color: 'bg-cyan-50 text-cyan-800' },
-          { label: 'हालसम्म भुक्तानी', value: amountLabel(totalPaid), icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-800' },
-          { label: 'औसत भौतिक प्रगति', value: `${toNepaliDigits(averageProgress)}%`, icon: Clock3, color: 'bg-indigo-50 text-indigo-800' },
-          { label: 'लक्ष्यभन्दा पछाडि', value: delayedCount, icon: AlertTriangle, color: 'bg-orange-50 text-orange-800' },
-          { label: 'सम्पन्न आयोजना', value: completedCount, icon: CheckCircle2, color: 'bg-green-50 text-green-800' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <article key={label} className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+          { label: 'कूल आयोजना', value: toNepaliDigits(filteredDashboardProjects.length), icon: CalendarDays, color: 'border-blue-200 bg-blue-50/70 text-blue-900', glow: 'hover:border-blue-400' },
+          { label: 'स्वीकृत लागत', value: amountLabel(totalBudget), icon: FileText, color: 'border-cyan-200 bg-cyan-50/70 text-cyan-900', glow: 'hover:border-cyan-400' },
+          { label: 'हालसम्म भुक्तानी', value: amountLabel(totalPaid), icon: CheckCircle2, color: 'border-emerald-200 bg-emerald-50/70 text-emerald-900', glow: 'hover:border-emerald-400' },
+          { label: 'औसत भौतिक प्रगति', value: `${toNepaliDigits(averageProgress)}%`, icon: Clock3, color: 'border-indigo-200 bg-indigo-50/70 text-indigo-900', glow: 'hover:border-indigo-400' },
+          { label: 'लक्ष्यभन्दा पछाडि', value: toNepaliDigits(delayedCount), icon: AlertTriangle, color: 'border-orange-200 bg-orange-50/70 text-orange-900', glow: 'hover:border-orange-400' },
+          { label: 'सम्पन्न आयोजना', value: toNepaliDigits(completedCount), icon: CheckCircle2, color: 'border-green-200 bg-green-50/70 text-green-900', glow: 'hover:border-green-400' },
+        ].map(({ label, value, icon: Icon, color, glow }) => (
+          <article key={label} className={`stat-tile-glow min-w-0 rounded-xl border p-3.5 bg-white/80 backdrop-blur-xs transition-all shadow-2xs ${color} ${glow}`}>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] text-slate-500">{label}</p>
-              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color}`}>
+              <p className="text-[11px] font-medium text-slate-500">{label}</p>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-2xs">
                 <Icon className="h-4 w-4" />
               </span>
             </div>
-            <p className="mt-2 truncate text-lg font-bold text-slate-900">{value}</p>
+            <p className="mt-2 truncate text-lg font-black text-slate-900">{value}</p>
           </article>
         ))}
       </div>
@@ -845,27 +854,40 @@ export const ProjectMonitoringWorkspaceView: React.FC<
             <tbody className="divide-y divide-slate-100">
               {pageProjects.length ? (
                 pageProjects.map(({ activity, details: record }) => (
-                  <tr key={activity.id} className="align-top text-slate-700 hover:bg-slate-50">
-                    <td className="max-w-44 px-2.5 py-3 font-semibold text-slate-900">{record.projectName}</td>
+                  <tr key={activity.id} className="align-middle text-slate-700 hover:bg-blue-50/40 transition-colors">
+                    <td className="max-w-44 px-2.5 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setViewActivity(activity)}
+                        className="font-bold text-slate-900 text-left hover:text-blue-800 hover:underline block leading-snug"
+                      >
+                        {record.projectName}
+                      </button>
+                      {record.contractorName && (
+                        <span className="text-[10px] text-slate-500 block truncate">
+                          ठेकेदार: {record.contractorName}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2.5 py-3">{record.province}</td>
                     <td className="px-2.5 py-3">{DISTRICT_NE_MAP[record.districtEn] || record.districtEn}</td>
                     <td className="px-2.5 py-3">{record.localLevel}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3">{amountLabel(record.approvedCost)}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3">{amountLabel(record.paidAmount)}</td>
-                    <td className="px-2.5 py-3">{toNepaliDigits(record.physicalProgress)}%</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 font-mono">{amountLabel(record.approvedCost)}</td>
+                    <td className="whitespace-nowrap px-2.5 py-3 font-mono">{amountLabel(record.paidAmount)}</td>
+                    <td className="px-2.5 py-3 font-bold text-blue-900">{toNepaliDigits(record.physicalProgress)}%</td>
                     <td className="px-2.5 py-3">
-                      <span className="whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold" style={{ backgroundColor: `${STATUS_COLORS[record.status]}15`, color: STATUS_COLORS[record.status] }}>
+                      <span className="whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold border" style={{ backgroundColor: `${STATUS_COLORS[record.status]}15`, color: STATUS_COLORS[record.status], borderColor: `${STATUS_COLORS[record.status]}40` }}>
                         {statusLabel(record.status)}
                       </span>
                     </td>
-                    <td className="max-w-40 px-2.5 py-3">{record.overallRemarks || '-'}</td>
+                    <td className="max-w-40 px-2.5 py-3 truncate">{record.overallRemarks || '-'}</td>
                     <td className="px-2.5 py-3">
                       {(activity.attachmentPaths ?? []).length ? (
                         <div className="flex flex-col gap-1">
                           {(activity.attachmentPaths ?? []).map((path) => (
                             <button key={path} type="button" onClick={() => openAttachment(path)} className="inline-flex items-center gap-1 text-blue-700 hover:underline">
                               <FileImage className="h-3 w-3" />
-                              फाइल हेर्नुहोस्
+                              फाइल
                             </button>
                           ))}
                         </div>
@@ -873,7 +895,10 @@ export const ProjectMonitoringWorkspaceView: React.FC<
                     </td>
                     <td className="px-2.5 py-2">
                       <div className="flex items-center gap-1">
-                        <button type="button" title="विवरण" onClick={() => setViewActivity(activity)} className="rounded p-1.5 text-slate-500 hover:bg-blue-50 hover:text-blue-800"><Eye className="h-3.5 w-3.5" /></button>
+                        <button type="button" title="डिजिटल मिसिल हेर्नुहोस्" onClick={() => setViewActivity(activity)} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[10px] border border-blue-200">
+                          <Eye className="h-3 w-3" />
+                          मिसिल
+                        </button>
                         <button type="button" title="सम्पादन" onClick={() => openEditForm(activity)} className="rounded p-1.5 text-slate-500 hover:bg-amber-50 hover:text-amber-800"><Pencil className="h-3.5 w-3.5" /></button>
                         <button type="button" title="मेटाउनुहोस्" disabled={deletingId === activity.id} onClick={() => deleteProject(activity)} className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -961,27 +986,17 @@ export const ProjectMonitoringWorkspaceView: React.FC<
                         ['startDate', 'आयोजना सुरु मिति', true],
                         ['expectedCompletionDate', 'आयोजना सम्पन्न हुने मिति', true],
                         ['inspectionDate', 'अनुगमन मिति', true],
-                      ] as const).map(([field, label, required]) => {
-                        const parts = dateParts(details[field]);
-                        return (
-                          <Field key={field} label={label} required={required}>
-                            <div className="grid grid-cols-3 gap-1.5">
-                              <select required={required} aria-label={`${label} साल`} value={parts.year} onChange={(event) => updateDate(field, 'year', event.target.value)} className={inputClassName}>
-                                <option value="">वर्ष</option>
-                                {YEARS.map((year) => <option key={year} value={englishDigits(year)}>{year}</option>)}
-                              </select>
-                              <select required={required} aria-label={`${label} महिना`} value={parts.month} onChange={(event) => updateDate(field, 'month', event.target.value.padStart(2, '0'))} className={inputClassName}>
-                                <option value="">महिना</option>
-                                {MONTHS.map((month, index) => <option key={month} value={String(index + 1).padStart(2, '0')}>{month}</option>)}
-                              </select>
-                              <select required={required} aria-label={`${label} गते`} value={parts.day} onChange={(event) => updateDate(field, 'day', event.target.value.padStart(2, '0'))} className={inputClassName}>
-                                <option value="">गते</option>
-                                {Array.from({ length: 32 }, (_, index) => index + 1).map((day) => <option key={day} value={String(day).padStart(2, '0')}>{toNepaliDigits(day)}</option>)}
-                              </select>
-                            </div>
-                          </Field>
-                        );
-                      })}
+                      ] as const).map(([field, label, required]) => (
+                        <Field key={field} label={label} required={required}>
+                          <NepaliDatePicker
+                            required={required}
+                            value={details[field]}
+                            onChange={(date) =>
+                              setDetails((current) => ({ ...current, [field]: date }))
+                            }
+                          />
+                        </Field>
+                      ))}
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                       <Field label="स्वीकृत लागत अनुमान (रु.)" required>
@@ -1110,110 +1125,17 @@ export const ProjectMonitoringWorkspaceView: React.FC<
           document.body
         )}
 
-      {viewActivity &&
-        createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div role="dialog" aria-modal="true" aria-labelledby="project-monitoring-detail-title" className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white shadow-xl">
-              {(() => {
-                const record = normalizeDetails(viewActivity);
-                return (
-                  <>
-                    <header className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
-                      <div>
-                        <h3 id="project-monitoring-detail-title" className="text-sm font-bold text-slate-900">आयोजना अनुगमन विवरण</h3>
-                        <p className="mt-0.5 text-xs text-slate-500">{record.projectName}</p>
-                      </div>
-                      <button type="button" aria-label="बन्द गर्नुहोस्" onClick={() => setViewActivity(null)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
-                    </header>
-                    <div className="space-y-4 p-5">
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {[
-                          ['प्रदेश', record.province],
-                          ['जिल्ला', DISTRICT_NE_MAP[record.districtEn] || record.districtEn],
-                          ['स्थानीय तह', record.localLevel],
-                          ['पूरा ठेगाना', `${record.fullAddress}${record.wardNo ? `, वडा ${record.wardNo}` : ''}`],
-                          ['कार्यान्वयन गर्ने निकाय', record.implementingAgency],
-                          ['ठेकेदार', record.contractorName],
-                          ['सम्झौता नं.', record.agreementNo],
-                          ['सम्झौता मिति', formatDate(record.agreementDate)],
-                          ['आयोजना सुरु मिति', formatDate(record.startDate)],
-                          ['सम्पन्न हुने मिति', formatDate(record.expectedCompletionDate)],
-                          ['स्वीकृत लागत', amountLabel(record.approvedCost)],
-                          ['हालसम्म खर्च', amountLabel(record.paidAmount)],
-                          ['भौतिक प्रगति', `${toNepaliDigits(record.physicalProgress)}%`],
-                          ['अनुगमन मिति', formatDate(record.inspectionDate)],
-                          ['स्थिति', statusLabel(record.status)],
-                        ].map(([label, value]) => (
-                          <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                            <div className="font-semibold text-slate-500">{label}</div>
-                            <div className="mt-1 text-slate-800">{value || '-'}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {CHECK_SECTIONS.map((section) => (
-                        <section key={section.key}>
-                          <h4 className="mb-2 text-xs font-bold text-blue-950">{section.title}</h4>
-                          <div className="overflow-x-auto rounded-lg border border-slate-200">
-                            <table className="w-full min-w-[620px] text-xs">
-                              <tbody className="divide-y divide-slate-100">
-                                {section.items.map((item) => {
-                                  const check = record.checks[item.key] ?? EMPTY_CHECK;
-                                  const answer = check.answer === 'yes' ? 'छ' : check.answer === 'no' ? 'छैन' : check.answer === 'na' ? 'लागू छैन' : '-';
-                                  return (
-                                    <tr key={item.key}>
-                                      <td className="px-3 py-2 text-slate-700">{item.label}</td>
-                                      <td className={`w-24 px-3 py-2 font-semibold ${check.answer === 'no' ? 'text-red-700' : 'text-emerald-700'}`}>{answer}</td>
-                                      <td className="px-3 py-2 text-slate-500">{check.remarks || '-'}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </section>
-                      ))}
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                          <div className="font-semibold text-slate-500">समग्र कैफियत / अवलोकन</div>
-                          <p className="mt-1 whitespace-pre-wrap text-slate-800">{record.overallRemarks || '-'}</p>
-                        </div>
-                        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                          <div className="font-semibold text-slate-500">सुझाव / सिफारिस</div>
-                          <p className="mt-1 whitespace-pre-wrap text-slate-800">{record.recommendation || '-'}</p>
-                        </div>
-                      </div>
-                      {record.team.length > 0 && (
-                        <section>
-                          <h4 className="mb-2 text-xs font-bold text-blue-950">अनुगमन टोली</h4>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {record.team.map((member, index) => (
-                              <p key={`${member.name}-${index}`} className="rounded-md border border-slate-200 p-3 text-xs text-slate-700">
-                                {member.name} {member.post ? `· ${member.post}` : ''} {member.date ? `· ${formatDate(member.date)}` : ''}
-                              </p>
-                            ))}
-                          </div>
-                        </section>
-                      )}
-                      {(viewActivity.attachmentPaths ?? []).length > 0 && (
-                        <section>
-                          <h4 className="mb-2 text-xs font-bold text-blue-950">संलग्न फाइलहरू</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {(viewActivity.attachmentPaths ?? []).map((path) => (
-                              <button key={path} type="button" onClick={() => openAttachment(path)} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-3 py-2 text-xs text-blue-800 hover:bg-blue-50">
-                                <FileText className="h-3.5 w-3.5" />{path.split('/').pop()}
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
+      {viewActivity && (
+        <ProjectMonitoringDossierModal
+          activity={viewActivity}
+          onClose={() => setViewActivity(null)}
+          onEdit={(act) => {
+            setViewActivity(null);
+            openEditForm(act);
+          }}
+          onOpenAttachment={(path) => openAttachment(path)}
+        />
+      )}
     </div>
   );
 };

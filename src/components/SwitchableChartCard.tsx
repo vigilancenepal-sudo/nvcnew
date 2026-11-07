@@ -60,7 +60,7 @@ export const SwitchableCategoricalChart: React.FC<SwitchableCategoricalChartProp
   const total = data.reduce((acc, d) => acc + d.value, 0);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
+    <div className="glass-panel rounded-2xl p-5 flex flex-col justify-between border border-slate-200/90 shadow-xs">
       <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-slate-100">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
@@ -222,7 +222,7 @@ export const SwitchableMonthlyChart: React.FC<SwitchableMonthlyChartProps> = ({
   const [mode, setMode] = useState<MonthlyChartMode>('bar');
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-5">
+    <div className="glass-panel rounded-2xl p-5 border border-slate-200/90 shadow-xs">
       <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
           <h3 className="text-base font-semibold text-slate-900">

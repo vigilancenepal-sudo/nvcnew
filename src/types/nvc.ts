@@ -79,6 +79,7 @@ export interface ComplaintRecord {
   finalDecisionDate?: string; // अन्तिम निर्णय मिति
   implementationInfoDate?: string; // कार्यान्वयनको जानकारी प्राप्त मिति
   investigationOfficer?: string; // अनुसन्धान/छानविन अधिकृत
+  investigationOutcome?: string; // छानविन निष्कर्ष
   patracharChalaniNo?: string; // पत्राचार चलानी नं.
   progressNote?: string; // कारबाही प्रगति विवरण
   remarks?: string; // कैफियत
@@ -136,6 +137,7 @@ export interface ActivityRecord {
   noticePublicationDetails?: NoticePublicationDetails | null;
   projectMonitoringDetails?: ProjectMonitoringDetails | null;
   technicalAuditDetails?: TechnicalAuditDetails | null;
+  labTestDetails?: LabTestDetails | null;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
@@ -150,6 +152,37 @@ export interface TechnicalAuditDetails {
   reportDate: string;
   reportInformationDate: string;
   remarks: string;
+  auditorName?: string;
+  auditorDesignation?: string;
+  contractNo?: string;
+  contractAmount?: number;
+  consultantName?: string;
+  auditStage?: 'pre_construction' | 'during_construction' | 'post_construction';
+  qualityRating?: 'उत्कृष्ट' | 'सन्तोषजनक' | 'सुधार आवश्यक' | 'गम्भीर त्रुटि';
+  financialRecoveryAmount?: number;
+  remedialDirectives?: string;
+  checks?: Record<string, { standard: string; status: 'yes' | 'no' | 'na'; remarks: string }>;
+}
+
+export interface LabTestDetails {
+  sampleCode: string;
+  sampleType: 'concrete_core' | 'bitumen' | 'rebar_steel' | 'soil_cbr' | 'aggregate';
+  sampleName: string;
+  projectName: string;
+  locationChainage: string;
+  collectionDate: string;
+  testedDate: string;
+  technicianName: string;
+  verifiedBy: string;
+  specifiedStandard: string;
+  obtainedValue: number;
+  requiredValue: number;
+  unit: string;
+  variancePercentage: number;
+  result: 'pass' | 'fail';
+  complianceVerdict?: 'PASS' | 'FAIL' | string;
+  testStandard?: string;
+  remarks?: string;
 }
 
 export interface ProjectMonitoringCheck {
@@ -191,6 +224,10 @@ export interface NoticePublicationDetails {
   date: string;
   title: string;
   description: string;
+  noticeNo?: string;
+  dispatchedBy?: string;
+  category?: string;
+  targetAudience?: string;
 }
 
 export interface PromotionalProgramDetails {
@@ -203,6 +240,11 @@ export interface PromotionalProgramDetails {
   targetGroup: string;
   participantCount: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  chiefGuest?: string;
+  objective?: string;
+  keyOutcomes?: string;
+  budgetAmount?: number;
+  coordinatorName?: string;
 }
 
 export interface CitizenCharterDetails {
@@ -270,6 +312,8 @@ export interface OfficeMonitoringDetails {
   remarks: string;
   timeViolationCount: number;
   dressViolationCount: number;
+  lateStaffCount?: number;
+  dressViolatorsCount?: number;
   recommendationCount: number;
 }
 

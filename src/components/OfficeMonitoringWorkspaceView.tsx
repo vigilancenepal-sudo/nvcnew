@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Clock3,
   Eye,
+  FileText,
   Filter,
   Gavel,
   ListChecks,
@@ -32,6 +33,8 @@ import {
   OfficeMonitoringDetails,
   OfficeMonitoringStaff,
 } from '../types/nvc';
+import { NepaliDatePicker } from './NepaliDatePicker';
+import { OfficeMonitoringDossierModal } from './OfficeMonitoringDossierModal';
 
 const EMPTY_STAFF: OfficeMonitoringStaff = {
   type: 'अनुपस्थिति',
@@ -63,7 +66,7 @@ const EMPTY_DETAILS: OfficeMonitoringDetails = {
 };
 
 const inputClassName =
-  'w-full rounded-md border border-slate-300 bg-[#faf8f3] px-2.5 py-2 text-xs text-slate-700 placeholder:text-slate-400 focus:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-700';
+  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all';
 const staffGridStyle: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns:
@@ -107,11 +110,13 @@ interface OfficeMonitoringWorkspaceViewProps {
 interface FieldProps {
   label: string;
   children: React.ReactNode;
+  required?: boolean;
 }
 
-const Field: React.FC<FieldProps> = ({ label, children }) => (
+const Field: React.FC<FieldProps> = ({ label, children, required }) => (
   <label className="block text-[11px] font-semibold text-slate-600">
     {label}
+    {required && <span className="ml-1 text-red-600">*</span>}
     <div className="mt-1">{children}</div>
   </label>
 );
@@ -227,6 +232,8 @@ export const OfficeMonitoringWorkspaceView: React.FC<
       label: 'कूल अनुगमन',
       count: fiscalYearActivities.length,
       icon: ListChecks,
+      accent: 'border-blue-200 bg-blue-50/70 text-blue-900',
+      glow: 'hover:border-blue-400',
     },
     {
       label: 'यस महिनाको अनुगमन',
@@ -234,6 +241,8 @@ export const OfficeMonitoringWorkspaceView: React.FC<
         (activity) => activity.monthIndex === CURRENT_NEPALI_MONTH_INDEX
       ).length,
       icon: CalendarDays,
+      accent: 'border-cyan-200 bg-cyan-50/70 text-cyan-900',
+      glow: 'hover:border-cyan-400',
     },
     {
       label: 'समय पालना नगर्ने',
@@ -242,6 +251,8 @@ export const OfficeMonitoringWorkspaceView: React.FC<
         0
       ),
       icon: Clock3,
+      accent: 'border-red-200 bg-red-50/70 text-red-900',
+      glow: 'hover:border-red-400',
     },
     {
       label: 'पोशाक पालना नगर्ने',
@@ -250,6 +261,8 @@ export const OfficeMonitoringWorkspaceView: React.FC<
         0
       ),
       icon: Shirt,
+      accent: 'border-amber-200 bg-amber-50/70 text-amber-900',
+      glow: 'hover:border-amber-400',
     },
     {
       label: 'कारबाही सिफारिस',
@@ -258,6 +271,8 @@ export const OfficeMonitoringWorkspaceView: React.FC<
         0
       ),
       icon: Gavel,
+      accent: 'border-indigo-200 bg-indigo-50/70 text-indigo-900',
+      glow: 'hover:border-indigo-400',
     },
   ];
 
@@ -373,48 +388,53 @@ export const OfficeMonitoringWorkspaceView: React.FC<
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <header className="glass-panel rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
-              <Clock3 className="h-5 w-5" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white shadow-xs">
+              <Clock3 className="h-6 w-6 text-blue-200" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">कार्यालय अनुगमन</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  कार्यालय छड्के अनुगमन महाशाखा (Office Monitoring Workspace)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                  आ.व. {toNepaliDigits(selectedFiscalYear)}
+                </span>
+              </div>
               <p className="mt-0.5 text-xs text-slate-500">
-                कार्यालयको समय, पोशाक तथा कर्मचारी उपस्थितिको अनुगमन अभिलेख
+                कार्यालय समय, पोशाक अपरिपालना, कर्मचारी छड्के हाजिरी निरीक्षण तथा सचेत/स्पष्टीकरण पत्र व्यवस्थापन
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={openNewModal}
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#002B49] px-4 py-2 text-xs font-bold text-white hover:bg-blue-900 transition-colors shadow-xs"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             नयाँ कार्यालय अनुगमन
           </button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {cards.map(({ label, count, icon: Icon }) => (
-          <div
+        {cards.map(({ label, count, icon: Icon, accent, glow }) => (
+          <article
             key={label}
-            className="flex min-h-[84px] items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+            className={`stat-tile-glow min-w-0 rounded-xl border p-3.5 bg-white/80 backdrop-blur-xs transition-all shadow-2xs ${accent} ${glow}`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-blue-900">
-              <Icon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-xl font-bold leading-6 text-slate-900">
-                {toNepaliDigits(count)}
-              </div>
-              <div className="mt-1 text-[11px] font-medium leading-4 text-slate-600">
-                {label}
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium text-slate-500">{label}</p>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-2xs">
+                <Icon className="h-4 w-4" />
+              </span>
             </div>
-          </div>
+            <p className="mt-2 truncate text-xl font-black text-slate-900">
+              {toNepaliDigits(count)}
+            </p>
+          </article>
         ))}
       </div>
 
@@ -432,21 +452,15 @@ export const OfficeMonitoringWorkspaceView: React.FC<
         {filterExpanded && (
           <div className="grid grid-cols-1 gap-3 border-t border-slate-100 p-4 sm:grid-cols-2 lg:grid-cols-5">
             <Field label="मिति (देखि)">
-              <input
-                type="text"
-                placeholder="साल-महिना-गते"
+              <NepaliDatePicker
                 value={filters.fromDate}
-                onChange={(event) => updateFilters('fromDate', event.target.value)}
-                className={inputClassName}
+                onChange={(date) => updateFilters('fromDate', date)}
               />
             </Field>
             <Field label="मिति (सम्म)">
-              <input
-                type="text"
-                placeholder="साल-महिना-गते"
+              <NepaliDatePicker
                 value={filters.toDate}
-                onChange={(event) => updateFilters('toDate', event.target.value)}
-                className={inputClassName}
+                onChange={(date) => updateFilters('toDate', date)}
               />
             </Field>
             <Field label="प्रदेश">
@@ -611,43 +625,61 @@ export const OfficeMonitoringWorkspaceView: React.FC<
               shownActivities.map((activity) => {
                 const info = detailFor(activity);
                 return (
-                  <tr key={activity.id} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-2.5 py-3">
+                  <tr key={activity.id} className="align-middle text-slate-700 hover:bg-blue-50/40 transition-colors">
+                    <td className="whitespace-nowrap px-2.5 py-3 font-medium">
                       {formatDate(info.date || activity.nepaliDate)}
                     </td>
                     <td className="px-2.5 py-3">{info.province || '-'}</td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-2.5 py-3 font-medium">
                       {DISTRICT_NE_MAP[activity.districtEn] || activity.districtEn}
                     </td>
                     <td className="px-2.5 py-3">{info.localLevel || '-'}</td>
-                    <td className="px-2.5 py-3">{info.officeName || activity.entityName}</td>
-                    <td className="px-2.5 py-3 text-center">
-                      {toNepaliDigits(info.timeViolationCount + info.dressViolationCount)}
+                    <td className="max-w-56 px-2.5 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setViewActivity(activity)}
+                        className="font-bold text-slate-900 text-left hover:text-blue-800 hover:underline block leading-snug"
+                      >
+                        {info.officeName || activity.entityName}
+                      </button>
+                      {info.responsibleOfficer && (
+                        <span className="text-[10px] text-slate-500 block truncate">
+                          प्रमुख: {info.responsibleOfficer}
+                        </span>
+                      )}
                     </td>
                     <td className="px-2.5 py-3 text-center">
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-xs ${
+                        (info.timeViolationCount + info.dressViolationCount) > 0
+                          ? 'bg-red-50 text-red-700 border border-red-200'
+                          : 'bg-emerald-50 text-emerald-700'
+                      }`}>
+                        {toNepaliDigits(info.timeViolationCount + info.dressViolationCount)}
+                      </span>
+                    </td>
+                    <td className="px-2.5 py-3 text-center font-mono font-semibold text-slate-800">
                       {toNepaliDigits(info.timeViolationCount)}
                     </td>
-                    <td className="px-2.5 py-3 text-center">
+                    <td className="px-2.5 py-3 text-center font-mono font-semibold text-slate-800">
                       {toNepaliDigits(info.dressViolationCount)}
                     </td>
-                    <td className="px-2.5 py-3">{info.observer || '-'}</td>
+                    <td className="px-2.5 py-3 text-slate-700">{info.observer || '-'}</td>
                     <td className="px-2.5 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          title="विवरण हेर्नुहोस्"
-                          aria-label="विवरण हेर्नुहोस्"
                           onClick={() => setViewActivity(activity)}
-                          className="text-slate-600 hover:text-blue-700"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[11px] transition-colors border border-blue-200 shadow-2xs"
                         >
-                          <Eye className="h-4 w-4" />
+                          <FileText className="h-3 w-3 text-blue-700" />
+                          मिसिल एवं पत्र
                         </button>
                         <button
                           type="button"
                           title="सम्पादन गर्नुहोस्"
                           aria-label="सम्पादन गर्नुहोस्"
                           onClick={() => openEditModal(activity)}
-                          className="text-amber-600 hover:text-amber-800"
+                          className="rounded-lg p-1 text-slate-600 hover:bg-amber-50 hover:text-amber-800"
                         >
                           <span className="text-sm">✎</span>
                         </button>
@@ -696,13 +728,11 @@ export const OfficeMonitoringWorkspaceView: React.FC<
             </div>
             <form onSubmit={saveRecord} className="flex min-h-0 flex-1 flex-col">
               <div className="grid grid-cols-1 gap-3 overflow-y-auto p-5 sm:grid-cols-2 lg:grid-cols-3">
-                <Field label="मिति">
-                  <input
+                <Field label="मिति" required>
+                  <NepaliDatePicker
                     required
                     value={details.date}
-                    onChange={(event) => updateDetails('date', event.target.value)}
-                    placeholder="साल-महिना-गते"
-                    className={inputClassName}
+                    onChange={(date) => updateDetails('date', date)}
                   />
                 </Field>
                 <Field label="प्रदेश">
@@ -1053,97 +1083,14 @@ export const OfficeMonitoringWorkspaceView: React.FC<
       )}
 
       {viewActivity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="office-monitoring-detail-title"
-            className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-[#fffdf8] shadow-xl"
-          >
-            {(() => {
-              const info = detailFor(viewActivity);
-              const rows: Array<[string, string | number]> = [
-                ['मिति', formatDate(info.date || viewActivity.nepaliDate)],
-                ['प्रदेश', info.province],
-                ['जिल्ला', DISTRICT_NE_MAP[viewActivity.districtEn] || viewActivity.districtEn],
-                ['स्थानीय तह', info.localLevel],
-                ['कार्यालयको नाम', info.officeName],
-                ['कार्यालय फोन', info.officePhone],
-                ['अनुगमन समय', info.monitoringTime],
-                ['अनुगमनकर्ता', info.observer],
-                ['अनुगमनकर्ता पद', info.observerPost],
-                ['कुल कर्मचारी', info.totalEmployees],
-                ['कार्यरत कर्मचारी', info.presentEmployees],
-                ['रिक्त कर्मचारी', info.absentEmployees],
-                ['जिम्मेवार अधिकारी', info.responsibleOfficer],
-                ['अधिकारी पद', info.responsibleOfficerPost],
-              ];
-              return (
-                <>
-                  <div className="flex items-center justify-between bg-slate-800 px-5 py-3 text-white">
-                    <h3 id="office-monitoring-detail-title" className="text-sm font-bold">
-                      अनुगमन विवरण
-                    </h3>
-                    <button
-                      type="button"
-                      aria-label="बन्द गर्नुहोस्"
-                      onClick={() => setViewActivity(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="p-5">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {rows.map(([label, value]) => (
-                        <div key={label} className="text-xs">
-                          <div className="font-semibold text-slate-600">{label}</div>
-                          <div className="mt-1 rounded-md border border-slate-200 bg-[#f5f2eb] px-3 py-2 text-slate-700">
-                            {value || '-'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-5 border-t border-[#e7e0d1] pt-4">
-                      <h4 className="mb-3 text-sm font-bold text-slate-700">
-                        कर्मचारी विवरण
-                      </h4>
-                      {info.staff.length === 0 ? (
-                        <p className="text-xs text-slate-500">कर्मचारी विवरण छैन।</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {info.staff.map((staff, index) => (
-                            <div
-                              key={`${staff.name}-${index}`}
-                              className="grid grid-cols-2 gap-3 rounded-md border border-[#e7e0d1] bg-[#faf8f3] p-3 text-xs md:grid-cols-5"
-                            >
-                              <span><b>प्रकार</b><br />{staff.type}</span>
-                              <span><b>कर्मचारीको नाम</b><br />{staff.name}</span>
-                              <span><b>पद</b><br />{staff.designation || '-'}</span>
-                              <span><b>संकेत नं.</b><br />{staff.signalNo || '-'}</span>
-                              <span><b>कैफियत</b><br />{staff.remarks || '-'}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <p className="mt-4 text-xs text-slate-700">
-                      <b>कैफियत:</b> {info.remarks || '-'}
-                    </p>
-                    <div className="mt-5 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => setViewActivity(null)}
-                        className="rounded-md bg-[#eee9df] px-4 py-2 text-xs text-slate-700"
-                      >
-                        बन्द गर्नुहोस्
-                      </button>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+        <OfficeMonitoringDossierModal
+          activity={viewActivity}
+          onClose={() => setViewActivity(null)}
+          onEdit={(act) => {
+            setViewActivity(null);
+            openEditModal(act);
+          }}
+        />
       )}
     </div>
   );

@@ -27,6 +27,7 @@ import {
   MahashakhaId,
   ShakhaId,
 } from '../types/nvc';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -360,26 +361,26 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <section className="glass-panel rounded-2xl p-5 border border-slate-200/90 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-900 border border-blue-200/60 shadow-2xs">
               <ClipboardList className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">छानविन/अन्वेषण</h2>
+              <h2 className="text-base font-bold text-slate-900">उजुरी छानविन तथा अनुसन्धान कार्यक्षेत्र</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                छानविन तथा अन्वेषण अभिलेख व्यवस्थापन
+                विशेष छानविन, प्रमाण संकलन, स्थलगत मुचुल्का तथा अन्वेषण अभिलेख व्यवस्थापन
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={openNewForm}
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-700 hover:bg-red-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs cursor-pointer transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
-            नयाँ छानविन/अन्वेषण
+            + नयाँ छानविन/अन्वेषण दर्ता
           </button>
         </div>
       </section>
@@ -388,16 +389,16 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
         {cards.map(({ label, count, icon: Icon }) => (
           <div
             key={label}
-            className="flex min-h-[84px] items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+            className="glass-panel stat-tile-glow flex min-h-[84px] items-center gap-3 rounded-xl border border-slate-200/90 p-4 shadow-2xs hover:-translate-y-0.5 transition-all"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-blue-900">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-900 border border-blue-200/60 shadow-2xs">
               <Icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <div className="text-xl font-bold leading-6 text-slate-900">
+              <div className="text-xl font-bold font-mono-num leading-6 text-slate-900">
                 {toNepaliDigits(count)}
               </div>
-              <div className="mt-1 text-[11px] font-medium leading-4 text-slate-600">
+              <div className="mt-1 text-[11px] font-medium leading-4 text-slate-600 truncate">
                 {label}
               </div>
             </div>
@@ -406,15 +407,15 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
       </div>
 
       {notice && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs text-blue-950">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2.5 text-xs font-semibold text-blue-950 shadow-2xs">
           {notice}
         </div>
       )}
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+      <section className="glass-panel overflow-hidden rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/90 px-5 py-3.5">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">छानविन/अन्वेषण अभिलेख</h3>
+            <h3 className="text-sm font-bold text-slate-900">छानविन/अन्वेषण अभिलेख तालिका</h3>
             <p className="mt-0.5 text-xs text-slate-500">
               {toNepaliDigits(shownInvestigationRecords.length)} /{' '}
               {toNepaliDigits(investigationRecords.length)} अभिलेख
@@ -428,7 +429,7 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
               onChange={(event) => setTableSearch(event.target.value)}
               placeholder="अभिलेख खोज्नुहोस्..."
               aria-label="छानविन/अन्वेषण अभिलेख खोज्नुहोस्"
-              className="w-full rounded-md border border-slate-200 py-2 pl-8 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-700"
+              className="w-full rounded-lg border border-slate-200 py-2 pl-8 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-700 bg-slate-50/70 focus:bg-white"
             />
           </label>
         </div>
@@ -584,16 +585,14 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
                       className={`${inputClassName} mt-1`}
                     />
                   </label>
-                  <label className="block font-medium text-slate-700">
-                    दर्ता मिति
-                    <input
+                  <div className="block font-medium text-slate-700">
+                    <span className="mb-1 block">दर्ता मिति</span>
+                    <NepaliDatePicker
                       required
-                      type="date"
                       value={form.dartaDate}
-                      onChange={(event) => updateForm('dartaDate', event.target.value)}
-                      className={`${inputClassName} mt-1`}
+                      onChange={(date) => updateForm('dartaDate', date)}
                     />
-                  </label>
+                  </div>
                   <label className="block font-medium text-slate-700">
                     उजुरकर्ता
                     <input
@@ -636,24 +635,22 @@ export const InvestigationWorkspaceView: React.FC<InvestigationWorkspaceViewProp
                     className={`${inputClassName} mt-1`}
                   />
                 </label>
-                <label className="block font-medium text-slate-700">
-                  छानविन/अन्वेषण मिति
-                  <input
-                    type="date"
-                    value={form.investigationDate}
-                    onChange={(event) => updateForm('investigationDate', event.target.value)}
-                    className={`${inputClassName} mt-1`}
-                  />
-                </label>
-                <label className="block font-medium text-slate-700">
-                  प्रतिवेदन मिति
-                  <input
-                    type="date"
-                    value={form.reportDate}
-                    onChange={(event) => updateForm('reportDate', event.target.value)}
-                    className={`${inputClassName} mt-1`}
-                  />
-                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="block font-medium text-slate-700">
+                    <span className="mb-1 block">छानविन/अन्वेषण मिति</span>
+                    <NepaliDatePicker
+                      value={form.investigationDate}
+                      onChange={(date) => updateForm('investigationDate', date)}
+                    />
+                  </div>
+                  <div className="block font-medium text-slate-700">
+                    <span className="mb-1 block">प्रतिवेदन मिति</span>
+                    <NepaliDatePicker
+                      value={form.reportDate}
+                      onChange={(date) => updateForm('reportDate', date)}
+                    />
+                  </div>
+                </div>
                 <label className="block font-medium text-slate-700">
                   प्रतिवेदनको सार
                   <textarea

@@ -47,6 +47,8 @@ import {
 } from '../data/nvcStructure';
 import { ActivityRecord, FiscalYear, ServiceSurveyDetails } from '../types/nvc';
 import { NepalChoroplethMap } from './NepalChoroplethMap';
+import { ServiceSurveyDossierModal } from './ServiceSurveyDossierModal';
+import { NepaliDatePicker } from './NepaliDatePicker';
 
 const EMPTY_DETAILS: ServiceSurveyDetails = {
   province: '',
@@ -445,18 +447,20 @@ export const ServiceSurveyWorkspaceView: React.FC<
     };
   });
   const cards = [
-    { label: 'कुल सर्भेक्षण', value: overviewSurveys.length, icon: ClipboardList },
-    { label: 'समग्र सेवा सन्तुष्टि', value: `${toNepaliDigits(satisfiedRate)}%`, icon: ThumbsUp },
-    { label: 'उत्कृष्ट सेवा अनुभव', value: satisfiedCount, icon: Trophy },
-    { label: 'सेवा सुधार आवश्यक', value: dissatisfiedCount, icon: AlertTriangle },
+    { label: 'कुल सर्भेक्षण', value: toNepaliDigits(overviewSurveys.length), icon: ClipboardList, accent: 'border-blue-200 bg-blue-50/70 text-blue-900', glow: 'hover:border-blue-400' },
+    { label: 'समग्र सेवा सन्तुष्टि', value: `${toNepaliDigits(satisfiedRate)}%`, icon: ThumbsUp, accent: 'border-emerald-200 bg-emerald-50/70 text-emerald-900', glow: 'hover:border-emerald-400' },
+    { label: 'उत्कृष्ट सेवा अनुभव', value: toNepaliDigits(satisfiedCount), icon: Trophy, accent: 'border-cyan-200 bg-cyan-50/70 text-cyan-900', glow: 'hover:border-cyan-400' },
+    { label: 'सेवा सुधार आवश्यक', value: toNepaliDigits(dissatisfiedCount), icon: AlertTriangle, accent: 'border-orange-200 bg-orange-50/70 text-orange-900', glow: 'hover:border-orange-400' },
     {
       label: 'नागरिक बडापत्र जानकारी',
-      value: overviewSurveys.filter(
+      value: toNepaliDigits(overviewSurveys.filter(
         (activity) => getDetails(activity).answers.charterInfo === 'छ'
-      ).length,
+      ).length),
       icon: FileText,
+      accent: 'border-indigo-200 bg-indigo-50/70 text-indigo-900',
+      glow: 'hover:border-indigo-400',
     },
-    { label: 'अतिरिक्त रकम मागिएको', value: extraMoneyCount, icon: Activity },
+    { label: 'अतिरिक्त रकम मागिएको', value: toNepaliDigits(extraMoneyCount), icon: Activity, accent: 'border-red-200 bg-red-50/70 text-red-900', glow: 'hover:border-red-400' },
   ];
 
   const openNewForm = () => {
@@ -616,27 +620,34 @@ export const ServiceSurveyWorkspaceView: React.FC<
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+      <header className="glass-panel rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-900">
-              <MessageSquareText className="h-5 w-5" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-900 text-white shadow-xs">
+              <MessageSquareText className="h-6 w-6 text-blue-200" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-slate-900">सेवाग्राही सर्वेक्षण ड्यासबोर्ड</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  सेवाग्राही सर्वेक्षण विश्लेषण ड्यासबोर्ड (Citizen Feedback Workspace)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                  आ.व. {toNepaliDigits(selectedFiscalYear)}
+                </span>
+              </div>
               <p className="mt-0.5 text-xs text-slate-500">
-                सन्तुष्टि, गुनासो र सेवा गुणस्तर विश्लेषण
+                सार्वजनिक सेवाग्राही सन्तुष्टि, बडापत्र जानकारी, अतिरिक्त रकम (घुस) जोखिम र सुधारका सुझावहरू
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <select
               aria-label="महिनाअनुसार फिल्टर"
               value={filters.month}
               onChange={(event) =>
                 setFilters((current) => ({ ...current, month: event.target.value }))
               }
-              className="rounded-md border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             >
               <option value="">सबै महिना</option>
               {MONTHS.map((month) => (
@@ -651,7 +662,7 @@ export const ServiceSurveyWorkspaceView: React.FC<
               onChange={(event) =>
                 setFilters((current) => ({ ...current, gender: event.target.value }))
               }
-              className="rounded-md border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             >
               <option value="">सबै लिङ्ग</option>
               {['पुरुष', 'महिला', 'अन्य'].map((gender) => (
@@ -661,9 +672,9 @@ export const ServiceSurveyWorkspaceView: React.FC<
             <button
               type="button"
               onClick={openNewForm}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-900"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#002B49] px-4 py-2 text-xs font-bold text-white hover:bg-blue-900 transition-colors shadow-xs"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               नयाँ सर्भेक्षण
             </button>
           </div>
@@ -671,18 +682,18 @@ export const ServiceSurveyWorkspaceView: React.FC<
       </header>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {cards.map(({ label, value, icon: Icon }) => (
+        {cards.map(({ label, value, icon: Icon, accent, glow }) => (
           <article
             key={label}
-            className="flex min-h-[92px] items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-xs"
+            className={`stat-tile-glow min-w-0 rounded-xl border p-3.5 bg-white/80 backdrop-blur-xs transition-all shadow-2xs ${accent} ${glow}`}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-              <Icon className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-xl font-bold text-slate-900">{value}</div>
-              <div className="text-[11px] leading-4 text-slate-600">{label}</div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium text-slate-500">{label}</p>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-2xs">
+                <Icon className="h-4 w-4" />
+              </span>
             </div>
+            <p className="mt-2 truncate text-xl font-black text-slate-900">{value}</p>
           </article>
         ))}
       </div>
@@ -791,23 +802,19 @@ export const ServiceSurveyWorkspaceView: React.FC<
               </select>
             </Field>
             <Field label="मिति (देखि)">
-              <input
+              <NepaliDatePicker
                 value={filters.fromDate}
-                onChange={(event) =>
-                  setFilters((current) => ({ ...current, fromDate: event.target.value }))
+                onChange={(date) =>
+                  setFilters((current) => ({ ...current, fromDate: date }))
                 }
-                placeholder="२०८३-०१-०१"
-                className={inputClassName}
               />
             </Field>
             <Field label="मिति (सम्म)">
-              <input
+              <NepaliDatePicker
                 value={filters.toDate}
-                onChange={(event) =>
-                  setFilters((current) => ({ ...current, toDate: event.target.value }))
+                onChange={(date) =>
+                  setFilters((current) => ({ ...current, toDate: date }))
                 }
-                placeholder="२०८३-१२-३०"
-                className={inputClassName}
               />
             </Field>
             <div className="flex items-end">
@@ -1046,45 +1053,58 @@ export const ServiceSurveyWorkspaceView: React.FC<
                   const satisfaction = satisfiedLabel(record);
                   const extraMoney = record.answers.extraMoney === 'पर्‍यो';
                   return (
-                    <tr key={activity.id} className="hover:bg-slate-50">
-                      <td className="whitespace-nowrap px-3 py-2.5">
+                    <tr key={activity.id} className="align-middle text-slate-700 hover:bg-blue-50/40 transition-colors">
+                      <td className="whitespace-nowrap px-3 py-2.5 font-medium">
                         {toNepaliDigits(surveyDate(record, activity))}
                       </td>
                       <td className="px-3 py-2.5">{record.province || '-'}</td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 font-medium">
                         {DISTRICT_NE_MAP[record.districtEn] || record.districtEn || '-'}
                       </td>
                       <td className="px-3 py-2.5">{record.gender || '-'}</td>
-                      <td className="px-3 py-2.5">{record.serviceOffice || '-'}</td>
+                      <td className="max-w-48 px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setViewActivity(activity)}
+                          className="font-bold text-slate-900 text-left hover:text-blue-800 hover:underline block leading-snug"
+                        >
+                          {record.serviceOffice || '-'}
+                        </button>
+                      </td>
                       <td className="px-3 py-2.5">
-                        <span className={satisfaction === 'सन्तुष्ट' ? 'font-semibold text-emerald-700' : 'font-semibold text-red-700'}>
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                          satisfaction === 'सन्तुष्ट'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                            : 'bg-red-50 text-red-800 border-red-300'
+                        }`}>
                           {satisfaction}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className={extraMoney ? 'font-semibold text-red-700' : 'font-semibold text-emerald-700'}>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                          extraMoney ? 'bg-red-50 text-red-700 border border-red-200' : 'text-slate-600'
+                        }`}>
                           {record.answers.extraMoney || '-'}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            title="विवरण हेर्नुहोस्"
-                            aria-label="विवरण हेर्नुहोस्"
                             onClick={() => setViewActivity(activity)}
-                            className="text-slate-600 hover:text-blue-700"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[11px] transition-colors border border-blue-200 shadow-2xs"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3 w-3 text-blue-700" />
+                            मिसिल हेर्नुहोस्
                           </button>
                           <button
                             type="button"
                             title="सम्पादन गर्नुहोस्"
                             aria-label="सम्पादन गर्नुहोस्"
                             onClick={() => openEditForm(activity)}
-                            className="text-slate-600 hover:text-blue-700"
+                            className="rounded-lg p-1 text-slate-600 hover:bg-amber-50 hover:text-amber-800"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
@@ -1092,7 +1112,7 @@ export const ServiceSurveyWorkspaceView: React.FC<
                             aria-label="मेटाउनुहोस्"
                             disabled={deletingId === activity.id}
                             onClick={() => void deleteSurvey(activity)}
-                            className="text-slate-600 hover:text-red-700 disabled:opacity-50"
+                            className="rounded-lg p-1 text-slate-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -1437,50 +1457,16 @@ export const ServiceSurveyWorkspaceView: React.FC<
                   </section>
 
                   <section className="rounded-lg border border-slate-200 bg-white p-4">
-                    <h4 className="mb-3 text-sm font-bold text-blue-950">सर्भेक्षण मिति</h4>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <Field label="साल" required>
-                        <input
-                          required
-                          inputMode="numeric"
-                          maxLength={4}
-                          value={dateParts[0] ?? ''}
-                          onChange={(event) =>
-                            updateSurveyDate('year', englishDigits(event.target.value))
-                          }
-                          placeholder="२०८३"
-                          className={inputClassName}
-                        />
-                      </Field>
-                      <Field label="महिना" required>
-                        <select
-                          required
-                          value={dateParts[1] ?? ''}
-                          onChange={(event) => updateSurveyDate('month', event.target.value)}
-                          className={inputClassName}
-                        >
-                          <option value="">महिना छान्नुहोस्</option>
-                          {MONTHS.map((month) => (
-                            <option key={month.value} value={month.value}>{month.name}</option>
-                          ))}
-                        </select>
-                      </Field>
-                      <Field label="गते" required>
-                        <select
-                          required
-                          value={dateParts[2] ?? ''}
-                          onChange={(event) => updateSurveyDate('day', event.target.value)}
-                          className={inputClassName}
-                        >
-                          <option value="">गते छान्नुहोस्</option>
-                          {Array.from({ length: 32 }, (_, index) =>
-                            String(index + 1).padStart(2, '0')
-                          ).map((day) => (
-                            <option key={day} value={day}>{toNepaliDigits(Number(day))}</option>
-                          ))}
-                        </select>
-                      </Field>
-                    </div>
+                    <h4 className="mb-2 text-xs font-semibold text-slate-700">
+                      सर्भेक्षण मिति <span className="text-red-600">*</span>
+                    </h4>
+                    <NepaliDatePicker
+                      required
+                      value={details.surveyDate}
+                      onChange={(date) =>
+                        setDetails((current) => ({ ...current, surveyDate: date }))
+                      }
+                    />
                   </section>
 
                   {errorMessage && (
@@ -1512,102 +1498,16 @@ export const ServiceSurveyWorkspaceView: React.FC<
           document.body
         )}
 
-      {viewActivity &&
-        createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 p-3">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="service-survey-detail-title"
-              className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
-            >
-              {(() => {
-                const record = getDetails(viewActivity);
-                return (
-                  <>
-                    <header className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
-                      <div>
-                        <h3 id="service-survey-detail-title" className="text-sm font-bold text-slate-900">
-                          सेवाग्राही सर्भेक्षण विवरण
-                        </h3>
-                        <p className="mt-0.5 text-xs text-slate-500">{record.serviceOffice}</p>
-                      </div>
-                      <button
-                        type="button"
-                        aria-label="बन्द गर्नुहोस्"
-                        onClick={() => setViewActivity(null)}
-                        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </header>
-                    <div className="space-y-4 p-5">
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {[
-                          ['सर्भेक्षण मिति', toNepaliDigits(surveyDate(record, viewActivity))],
-                          ['प्रदेश', record.province],
-                          ['जिल्ला', DISTRICT_NE_MAP[record.districtEn] || record.districtEn],
-                          ['स्थानीय तह', record.localLevel],
-                          ['पूरा ठेगाना', record.fullAddress],
-                          ['लिङ्ग', record.gender],
-                          ['विवरण दिन चाहेको कार्यालय', record.serviceOffice],
-                          ['पछिल्लो वर्षका कार्यालय', record.previousOffices.filter(Boolean).join('، ')],
-                        ].map(([label, value]) => (
-                          <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                            <div className="font-semibold text-slate-500">{label}</div>
-                            <div className="mt-1 text-slate-800">{value || '-'}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <section>
-                        <h4 className="mb-2 text-sm font-bold text-slate-800">सर्भेक्षणका जवाफ</h4>
-                        <div className="divide-y divide-slate-100 rounded-lg border border-slate-200">
-                          {QUESTIONS.map((question) => (
-                            <div key={question.key} className="flex flex-wrap justify-between gap-2 px-3 py-2.5 text-xs">
-                              <span className="text-slate-700">{question.label}</span>
-                              <span className="font-semibold text-blue-900">
-                                {record.answers[question.key] || '-'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {[
-                          ['सेवा प्रवाह सुधार सुझाव', record.improvements],
-                          ['राम्रो सेवा प्रवाह गर्ने कार्यालय', record.goodServiceOffices],
-                          ['सेवा प्रवाह कमजोर/अनियमित कार्यालय', record.weakServiceOffices],
-                        ].map(([label, value]) => (
-                          <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                            <div className="font-semibold text-slate-500">{label}</div>
-                            <div className="mt-1 whitespace-pre-wrap text-slate-800">{value || '-'}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                        <div className="font-semibold text-slate-500">असन्तुष्टिको कारण</div>
-                        <div className="mt-1 text-slate-800">
-                          {record.dissatisfactionReasons.join('، ') || '-'}
-                          {record.answers.otherReason ? `: ${record.answers.otherReason}` : ''}
-                        </div>
-                      </div>
-                      <footer className="flex justify-end border-t border-slate-100 pt-4">
-                        <button
-                          type="button"
-                          onClick={() => setViewActivity(null)}
-                          className="rounded-md bg-slate-100 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200"
-                        >
-                          बन्द गर्नुहोस्
-                        </button>
-                      </footer>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
+      {viewActivity && (
+        <ServiceSurveyDossierModal
+          activity={viewActivity}
+          onClose={() => setViewActivity(null)}
+          onEdit={(act) => {
+            setViewActivity(null);
+            openEditForm(act);
+          }}
+        />
+      )}
     </div>
   );
 };

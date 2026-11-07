@@ -196,7 +196,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-slate-200 rounded-lg p-5">
+      <div className="glass-panel rounded-2xl p-6 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -400,8 +400,8 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-lg max-w-lg w-full p-6 shadow-xl">
+        <div className="fixed inset-0 z-[10000] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">
                 {editingUser ? 'प्रयोगकर्ता विवरण सम्पादन' : 'नयाँ प्रयोगकर्ता दर्ता'}

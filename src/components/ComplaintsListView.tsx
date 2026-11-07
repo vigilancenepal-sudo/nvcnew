@@ -32,6 +32,7 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
+import { ComplaintDossierModal } from './ComplaintDossierModal';
 
 interface ComplaintsListViewProps {
   titleLabel: string;
@@ -358,7 +359,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
       )}
 
       {/* १. फिल्टरहरू Card matching complaint.pdf */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-xs">
+      <div className="glass-panel rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
             <Filter className="w-4 h-4 text-slate-700" />
@@ -624,14 +625,25 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
       </div>
 
       {/* २. उजुरी सूची Table Card matching complaint.pdf */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+      <div className="glass-panel rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         {/* Table Toolbar */}
         <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-sm font-bold text-slate-900">
-            {titleLabel} ({filteredAndSorted.length})
-          </h3>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-700" />
+            <h3 className="text-sm font-bold text-slate-900">
+              {titleLabel} ({toNepaliDigits(filteredAndSorted.length)})
+            </h3>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={onAddNewComplaint}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg font-bold shadow-xs transition-colors cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ नयाँ उजुरी दर्ता</span>
+            </button>
             <button
               type="button"
               onClick={handlePrintPdf}
@@ -930,168 +942,15 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
         )}
       </div>
 
-      {/* View Complaint Detail Modal */}
-      {viewingComplaint && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl max-w-3xl w-full max-h-[88vh] overflow-y-auto p-6 shadow-xl text-xs space-y-4">
-            <div className="flex items-start justify-between gap-4 pb-3 border-b border-slate-100">
-              <div>
-                <div className="text-blue-900 font-bold font-mono-num">
-                  दर्ता नं: {viewingComplaint.dartaNo} · मिति: {viewingComplaint.nepaliDate} · स्थिति:{' '}
-                  {COMPLAINT_STATUS_LABELS[viewingComplaint.status]}
-                </div>
-                <h4 className="text-sm font-bold text-slate-900 mt-1">
-                  उजुरीको विस्तृत विवरण
-                </h4>
-              </div>
-              <button
-                type="button"
-                onClick={() => setViewingComplaint(null)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">उजुरकर्ता:</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {viewingComplaint.complainant || 'बेनामी'}
-                </div>
-                {viewingComplaint.complainantContact &&
-                  viewingComplaint.complainantContact !== '-' && (
-                    <div className="text-[11px] text-slate-600 mt-0.5 font-mono-num">
-                      {viewingComplaint.complainantContact}
-                    </div>
-                  )}
-              </div>
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">विपक्षी:</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {viewingComplaint.respondent || '-'}
-                </div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">मन्त्रालय/निकाय:</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {viewingComplaint.ministry || '-'}
-                </div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">स्थान (जिल्ला / स्थानीय तह):</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {DISTRICT_NE_MAP[viewingComplaint.districtEn] || viewingComplaint.districtEn}
-                  {viewingComplaint.localLevel && viewingComplaint.localLevel !== '-'
-                    ? ` · ${viewingComplaint.localLevel}`
-                    : ''}
-                </div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">जिम्मेवार शाखा:</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {getShakhaName(viewingComplaint.shakhaId)}
-                </div>
-              </div>
-              <div className="p-3 bg-slate-50 rounded border border-slate-100">
-                <span className="text-slate-500">छानविन अधिकृत / पत्राचार चलानी:</span>
-                <div className="font-semibold text-slate-900 mt-0.5">
-                  {viewingComplaint.investigationOfficer &&
-                  viewingComplaint.investigationOfficer !== '-'
-                    ? viewingComplaint.investigationOfficer
-                    : '-'}
-                  {viewingComplaint.patracharChalaniNo &&
-                  viewingComplaint.patracharChalaniNo !== '-'
-                    ? ` · ${viewingComplaint.patracharChalaniNo}`
-                    : ''}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-slate-50 rounded border border-slate-100">
-              <div className="text-slate-500 font-semibold mb-1">उजुरीको विवरण:</div>
-              <p className="text-slate-900 leading-relaxed">{viewingComplaint.title}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 bg-slate-50 rounded border border-slate-100">
-                <div className="text-slate-500 font-semibold mb-1">समितिको निर्णय:</div>
-                <p className="text-slate-900 leading-relaxed">
-                  {viewingComplaint.committeeDecision || '-'}
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-slate-50 rounded border border-slate-100 space-y-1.5">
-                <div className="text-slate-500 font-semibold">
-                  केन्द्रको अन्तिम निर्णय
-                  {viewingComplaint.finalDecisionDate &&
-                  viewingComplaint.finalDecisionDate !== '-'
-                    ? ` (${viewingComplaint.finalDecisionDate})`
-                    : ''}
-                  :
-                </div>
-                {viewingComplaint.finalDecisionType &&
-                  viewingComplaint.finalDecisionType !== '-' && (
-                    <div className="text-blue-900 font-semibold">
-                      प्रकार: {viewingComplaint.finalDecisionType}
-                    </div>
-                  )}
-                <p className="text-slate-900 leading-relaxed">
-                  {viewingComplaint.finalDecision || '-'}
-                </p>
-                {viewingComplaint.implementationInfoDate &&
-                  viewingComplaint.implementationInfoDate !== '-' && (
-                    <div className="text-[11px] text-emerald-800 font-semibold pt-1 border-t border-slate-200/70 font-mono-num">
-                      कार्यान्वयनको जानकारी प्राप्त मिति: {viewingComplaint.implementationInfoDate}
-                    </div>
-                  )}
-              </div>
-            </div>
-
-            {((viewingComplaint.progressNote && viewingComplaint.progressNote !== '-') ||
-              (viewingComplaint.remarks && viewingComplaint.remarks !== '-')) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3.5 bg-slate-50 rounded border border-slate-100">
-                  <div className="text-slate-500 font-semibold mb-1">
-                    कारबाही प्रगति / राय प्रतिक्रिया:
-                  </div>
-                  <p className="text-slate-900 leading-relaxed">
-                    {viewingComplaint.progressNote || '-'}
-                  </p>
-                </div>
-
-                <div className="p-3.5 bg-slate-50 rounded border border-slate-100">
-                  <div className="text-slate-500 font-semibold mb-1">कैफियत:</div>
-                  <p className="text-slate-900 leading-relaxed">
-                    {viewingComplaint.remarks || '-'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  const cmp = viewingComplaint;
-                  setViewingComplaint(null);
-                  onEditComplaint(cmp);
-                }}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-md cursor-pointer"
-              >
-                सम्पादन गर्नुहोस्
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewingComplaint(null)}
-                className="px-4 py-2 bg-blue-950 text-white font-semibold rounded-md cursor-pointer"
-              >
-                बन्द गर्नुहोस्
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* View Complaint Digital Dossier (E-Dossier) Modal */}
+      <ComplaintDossierModal
+        complaint={viewingComplaint}
+        onClose={() => setViewingComplaint(null)}
+        onEdit={(cmp) => {
+          setViewingComplaint(null);
+          onEditComplaint(cmp);
+        }}
+      />
 
       {/* Bulk Remarks Modal */}
       {remarksModalOpen && (
