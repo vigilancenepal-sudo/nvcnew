@@ -22,6 +22,7 @@ import {
   CURRENT_NEPALI_MONTH_INDEX,
   DISTRICT_NE_MAP,
   MAHASHAKHAS,
+  NEPALI_YEARS,
   NEPALI_MONTHS,
   SHAKHAS,
   toNepaliDigits,
@@ -34,7 +35,7 @@ const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const FILE_ACCEPT = '.doc,.docx,.pdf,.jpg,.jpeg,.png';
 const MONTHS = NEPALI_MONTHS;
-const YEARS = ['२०८५', '२०८४', '२०८३', '२०८२', '२०८१', '२०८०', '२०७९'];
+const YEARS = NEPALI_YEARS;
 const PROJECT_NATURES = [
   'सडक पूर्वाधार',
   'पुल निर्माण',

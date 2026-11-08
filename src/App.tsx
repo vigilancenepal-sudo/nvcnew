@@ -60,6 +60,12 @@ import {
   Clock,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
+  RotateCw,
+  CheckCircle2,
+  Mail,
+  UserCheck,
+  AlertTriangle,
 } from 'lucide-react';
 
 const MENU_ICONS: Record<MenuId, React.ComponentType<{ className?: string }>> = {
@@ -458,6 +464,27 @@ export default function App() {
     }
   };
 
+  const handleCheckStatus = async () => {
+    if (!authenticatedUser) return;
+    setProfileLoading(true);
+    setAuthError(null);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('authUserId', authenticatedUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        setUserProfile(data as UserProfile);
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     setProfileDropdownOpen(false);
     const { error } = await supabase.auth.signOut();
@@ -532,6 +559,14 @@ export default function App() {
                   आफ्नो आधिकारिक Google खातामार्फत लगइन गरी तोकिएको महाशाखा वा शाखाको कार्यसम्पादन ड्यासबोर्ड प्रयोग गर्नुहोस्।
                 </p>
 
+                {/* Institutional Access Approval Notice */}
+                <div className="mt-3.5 p-3 bg-amber-50 border border-amber-200/90 rounded-md text-[11px] text-amber-900 leading-relaxed flex items-start gap-2.5">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-semibold text-amber-950">पहुँच नीति:</strong> नयाँ प्रयोगकर्ताको हकमा प्रणाली प्रशासक (Admin) ले पहुँच (Access) स्वीकृत गरी महाशाखा वा शाखा तोकेपछि मात्र ड्यासबोर्ड खुल्नेछ।
+                  </div>
+                </div>
+
                 {authError && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800">
                     {authError}
@@ -541,7 +576,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="mt-6 w-full py-2.5 px-4 bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-2.5 cursor-pointer"
+                  className="mt-5 w-full py-2.5 px-4 bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-xs"
                 >
                   <Shield className="w-4 h-4" />
                   आधिकारिक खाताबाट लगइन गर्नुहोस् (Google SSO)
@@ -573,23 +608,90 @@ export default function App() {
     );
   }
 
-  // Blocked / Inactive Account Check
+  // Pending Admin Approval / Inactive Account Gate
   if (userProfile.status !== 'active') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white border border-slate-200 rounded-lg max-w-md w-full p-6 text-center space-y-4">
-          <h2 className="text-base font-bold text-red-800">खाता निष्क्रिय गरिएको छ</h2>
-          <p className="text-xs text-slate-600">
-            तपाईंको प्रयोगकर्ता खाता हाल निष्क्रिय (Inactive) अवस्थामा छ। कृपया राष्ट्रिय सतर्कता केन्द्रको प्रणाली प्रशासक (Admin) सँग सम्पर्क गर्नुहोस्।
-          </p>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 rounded-md cursor-pointer"
-          >
-            लगआउट गर्नुहोस्
-          </button>
+      <div className="min-h-screen bg-slate-100 flex flex-col justify-between">
+        {/* Top Official Sovereign Strip */}
+        <div className="bg-blue-950 text-white border-b-2 border-red-700 px-6 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between text-xs">
+            <span>नेपाल सरकार · राष्ट्रिय सतर्कता केन्द्र</span>
+            <span>सिंहदरबार, काठमाडौँ · मिति: {CURRENT_NEPALI_DATE_DISPLAY}</span>
+          </div>
         </div>
+
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-8 shadow-sm text-center space-y-5">
+            <div className="w-16 h-16 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-center mx-auto shadow-2xs">
+              <ShieldAlert className="w-8 h-8 text-amber-600" />
+            </div>
+
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 mb-2">
+                <Clock className="w-3.5 h-3.5" />
+                पहुँच स्वीकृतिको प्रतीक्षामा (Pending Approval)
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mt-1">
+                प्रणाली पहुँच स्वीकृति बाँकी छ
+              </h2>
+              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                तपाईंको आधिकारिक Google खाता प्रमाणीकरण भएको छ। राष्ट्रिय सतर्कता केन्द्रको सुरक्षा निर्देशिका अनुसार <strong className="text-slate-900">प्रणाली प्रशासक (Admin)</strong> ले पहुँच (Access) स्वीकृत गरी महाशाखा वा शाखा तोकेपछि मात्र तपाईंले प्रणालीको ड्यासबोर्ड प्रयोग गर्न सक्नुहुनेछ।
+              </p>
+            </div>
+
+            {/* Logged in Account Details */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">लगइन गरिएको नाम:</span>
+                <span className="font-semibold text-slate-800">{userProfile.fullName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">इमेल ठेगाना:</span>
+                <span className="font-mono-num font-semibold text-slate-800">{userProfile.email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">हालको स्थिति:</span>
+                <span className="text-amber-700 font-semibold">स्वीकृति प्रतीक्षारत (Inactive)</span>
+              </div>
+            </div>
+
+            {/* Admin Contact Box */}
+            <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 text-xs text-blue-900 text-left flex items-start gap-2.5">
+              <Mail className="w-4 h-4 text-blue-800 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-semibold">प्रणाली प्रशासकसँग सम्पर्क:</span>
+                <p className="text-[11px] text-blue-800 mt-0.5">
+                  आफ्नो पद तथा महाशाखा/शाखा तोकी खाता सक्रिय गराउन मुख्य प्रशासक (Admin) लाई <strong>vigilancenepal@gmail.com</strong> मा अनुरोध गर्नुहोस्।
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleCheckStatus}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-blue-950 hover:bg-blue-900 rounded-lg transition-colors cursor-pointer shadow-xs"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                स्वीकृति पुनः जाँच गर्नुहोस्
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                लगआउट गर्नुहोस्
+              </button>
+            </div>
+          </div>
+        </main>
+
+        <footer className="py-3 px-6 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+          © २०८३ राष्ट्रिय सतर्कता केन्द्र, सिंहदरबार, काठमाडौँ · सर्वाधिकार सुरक्षित
+        </footer>
       </div>
     );
   }
@@ -1006,9 +1108,6 @@ export default function App() {
               </span>
               <Eye className="w-3.5 h-3.5 text-blue-900 shrink-0" />
               <span className="font-bold text-slate-900">(भूमिका तथा महाशाखा/शाखा स्विचर):</span>
-              <span className="text-slate-500 hidden md:inline">
-                विशिष्ट मेनु तथा ३-तहको RBAC डेटा पहुँच सिमुलेशन
-              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

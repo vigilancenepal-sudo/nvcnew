@@ -87,7 +87,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
   const [dartaNo, setDartaNo] = useState('');
   const [dartaYear, setDartaYear] = useState('२०८३');
   const [dartaMonthIdx, setDartaMonthIdx] = useState(7); // कार्तिक (1-based)
-  const [dartaDay, setDartaDay] = useState(16);
+  const [dartaDay, setDartaDay] = useState(22); // २२ गते (आइतबार)
   const [complainant, setComplainant] = useState('');
   const [complainantContact, setComplainantContact] = useState('');
   const [respondent, setRespondent] = useState('');
@@ -251,7 +251,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
       setDartaNo(`NVC-२०८३-${toNepaliDigits(randNum)}`);
       setDartaYear('२०८३');
       setDartaMonthIdx(7);
-      setDartaDay(16);
+      setDartaDay(22);
       setComplainant('');
       setComplainantContact('');
       setRespondent('');
@@ -292,7 +292,12 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
     }
   }, [editingComplaint, effectiveRole, effectiveMahashakhaId, effectiveShakhaId]);
 
-  const selectedProvinceObj = PROVINCES_DATA.find((p) => p.nameNe === province);
+  const selectedProvinceObj = PROVINCES_DATA.find(
+    (p) =>
+      p.nameNe === province ||
+      p.id === province ||
+      p.nameNe.replace(/\s+/g, '') === (province || '').replace(/\s+/g, '')
+  );
   const availableDistricts = selectedProvinceObj ? selectedProvinceObj.districtsEn : [];
   const availableLocalLevels = districtEn ? getLocalLevelsForDistrict(districtEn) : [];
   const availableShakhasForMaha = SHAKHAS.filter(
@@ -396,15 +401,15 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
     const finalDecisionDateStr =
       finalYear && finalMonthIdx && finalDay
         ? `${finalYear}-${toNepaliDigits(String(finalMonthIdx).padStart(2, '0'))}-${toNepaliDigits(
-            String(finalDay).padStart(2, '0')
-          )}`
+          String(finalDay).padStart(2, '0')
+        )}`
         : '-';
 
     const implementationInfoDateStr =
       implYear && implMonthIdx && implDay
         ? `${implYear}-${toNepaliDigits(String(implMonthIdx).padStart(2, '0'))}-${toNepaliDigits(
-            String(implDay).padStart(2, '0')
-          )}`
+          String(implDay).padStart(2, '0')
+        )}`
         : '-';
 
     const resolvedDistrict = districtEn || 'Kathmandu';
@@ -414,8 +419,8 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
       dartaYear === '२०८२'
         ? '2082/83'
         : dartaYear === '२०८१'
-        ? '2081/82'
-        : selectedFiscalYear;
+          ? '2081/82'
+          : selectedFiscalYear;
 
     try {
       if (editingComplaint) {
@@ -640,7 +645,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                 <select
                   value={dartaYear}
                   onChange={(e) => setDartaYear(e.target.value)}
-                  className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                  className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                 >
                   {NEPALI_YEARS.map((yr) => (
                     <option key={yr} value={yr}>
@@ -651,7 +656,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                 <select
                   value={dartaMonthIdx}
                   onChange={(e) => setDartaMonthIdx(Number(e.target.value))}
-                  className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                  className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                 >
                   {NEPALI_MONTHS.map((m, idx) => (
                     <option key={m} value={idx + 1}>
@@ -662,7 +667,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                 <select
                   value={dartaDay}
                   onChange={(e) => setDartaDay(Number(e.target.value))}
-                  className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                  className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                 >
                   {Array.from({ length: 32 }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>
@@ -894,11 +899,10 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
             <button
               type="button"
               onClick={() => handleVoiceToggle('description')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-colors cursor-pointer ${
-                listeningField === 'description'
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-colors cursor-pointer ${listeningField === 'description'
                   ? 'bg-red-50 border-red-300 text-red-700'
                   : 'bg-white border-blue-200 text-blue-800 hover:bg-blue-50'
-              }`}
+                }`}
             >
               {listeningField === 'description' ? (
                 <MicOff className="w-3.5 h-3.5" />
@@ -1028,11 +1032,10 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleVoiceToggle('decision')}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-colors cursor-pointer ${
-                  listeningField === 'decision'
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium transition-colors cursor-pointer ${listeningField === 'decision'
                     ? 'bg-red-50 border-red-300 text-red-700'
                     : 'bg-white border-blue-200 text-blue-800 hover:bg-blue-50'
-                }`}
+                  }`}
               >
                 {listeningField === 'decision' ? (
                   <MicOff className="w-3.5 h-3.5" />
@@ -1090,7 +1093,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={finalYear}
                       onChange={(e) => setFinalYear(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">साल</option>
                       {NEPALI_YEARS.map((yr) => (
@@ -1102,7 +1105,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={finalMonthIdx}
                       onChange={(e) => setFinalMonthIdx(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">महिना</option>
                       {NEPALI_MONTHS.map((m, idx) => (
@@ -1114,7 +1117,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={finalDay}
                       onChange={(e) => setFinalDay(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">गते</option>
                       {Array.from({ length: 32 }, (_, i) => i + 1).map((d) => (
@@ -1136,7 +1139,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={implYear}
                       onChange={(e) => setImplYear(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">साल</option>
                       {NEPALI_YEARS.map((yr) => (
@@ -1148,7 +1151,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={implMonthIdx}
                       onChange={(e) => setImplMonthIdx(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">महिना</option>
                       {NEPALI_MONTHS.map((m, idx) => (
@@ -1160,7 +1163,7 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <select
                       value={implDay}
                       onChange={(e) => setImplDay(e.target.value)}
-                      className="px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800"
+                      className="px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs"
                     >
                       <option value="">गते</option>
                       {Array.from({ length: 32 }, (_, i) => i + 1).map((d) => (
@@ -1183,11 +1186,10 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleVoiceToggle('finalDecision')}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[11px] font-medium transition-colors cursor-pointer ${
-                        listeningField === 'finalDecision'
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[11px] font-medium transition-colors cursor-pointer ${listeningField === 'finalDecision'
                           ? 'bg-red-50 border-red-300 text-red-700'
                           : 'bg-white border-blue-200 text-blue-800 hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Mic className="w-3 h-3" />
                       <span>आवाज</span>
@@ -1215,11 +1217,10 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleVoiceToggle('progressNote')}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[11px] font-medium transition-colors cursor-pointer ${
-                        listeningField === 'progressNote'
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-[11px] font-medium transition-colors cursor-pointer ${listeningField === 'progressNote'
                           ? 'bg-red-50 border-red-300 text-red-700'
                           : 'bg-white border-blue-200 text-blue-800 hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       <Mic className="w-3 h-3" />
                       <span>आवाज</span>
@@ -1336,8 +1337,8 @@ export const NewComplaintFormView: React.FC<NewComplaintFormViewProps> = ({
                 {saving
                   ? 'अद्यावधिक हुँदैछ...'
                   : editingComplaint
-                  ? 'परिवर्तन सुरक्षित गर्नुहोस्'
-                  : 'सुरक्षित गर्नुहोस्'}
+                    ? 'परिवर्तन सुरक्षित गर्नुहोस्'
+                    : 'सुरक्षित गर्नुहोस्'}
               </span>
             </button>
           </div>

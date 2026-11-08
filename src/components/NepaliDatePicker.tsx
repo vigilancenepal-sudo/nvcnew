@@ -1,20 +1,12 @@
 import React, { useMemo } from 'react';
 import {
+  NEPALI_YEARS,
   NEPALI_MONTHS,
   toNepaliDigits,
   fromNepaliDigits,
 } from '../data/nvcStructure';
 
-export const EXTENDED_NEPALI_YEARS = [
-  '२०८५',
-  '२०८४',
-  '२०८३',
-  '२०८२',
-  '२०८१',
-  '२०८०',
-  '२०७९',
-  '२०७८',
-];
+export const EXTENDED_NEPALI_YEARS = NEPALI_YEARS;
 
 interface NepaliDatePickerProps {
   value?: string | null;
@@ -22,7 +14,7 @@ interface NepaliDatePickerProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
-  format?: 'nepali' | 'english'; // Default is 'nepali' (e.g. '२०८३-०७-१६')
+  format?: 'nepali' | 'english'; // Default is 'nepali' (e.g. '२०८३-०७-२२')
   placeholderYear?: string;
   placeholderMonth?: string;
   placeholderDay?: string;
@@ -34,7 +26,7 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
   onChange,
   required = false,
   disabled = false,
-  className = 'px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs',
+  className = 'px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-900 focus:outline-none focus:border-blue-800 text-xs',
   format = 'nepali',
   placeholderYear = 'साल',
   placeholderMonth = 'महिना',
@@ -77,8 +69,8 @@ export const NepaliDatePicker: React.FC<NepaliDatePickerProps> = ({
       return;
     }
     const safeYear = yr || '२०८३';
-    const safeMonth = mo ? String(mo).padStart(2, '0') : '०१';
-    const safeDay = dy ? String(dy).padStart(2, '0') : '०१';
+    const safeMonth = mo ? String(mo).padStart(2, '0') : '०७';
+    const safeDay = dy ? String(dy).padStart(2, '0') : '२२';
 
     if (format === 'english') {
       const engYear = fromNepaliDigits(safeYear);

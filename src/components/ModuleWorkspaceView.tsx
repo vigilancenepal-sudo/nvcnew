@@ -89,7 +89,7 @@ export const ModuleWorkspaceView: React.FC<ModuleWorkspaceViewProps> = ({
         districtEn: 'Kathmandu',
         fiscalYear: selectedFiscalYear,
         monthIndex: CURRENT_NEPALI_MONTH_INDEX,
-        nepaliDate: '२०८३-०७-१६',
+        nepaliDate: '२०८३-०७-२२',
         nonComplianceCount: 0,
         directiveCount: 1,
         status: 'chalu',

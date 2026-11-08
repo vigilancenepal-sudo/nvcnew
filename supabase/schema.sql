@@ -170,7 +170,7 @@ begin
       case when is_primary_admin then 'admin' else 'shakha' end,
       case when is_primary_admin then 'all' else 'maha_admin' end,
       case when is_primary_admin then 'all' else 'shakha_admin_plan' end,
-      'active'
+      case when is_primary_admin then 'active' else 'inactive' end
     );
   end if;
 
@@ -233,7 +233,7 @@ begin
       case when is_primary_admin then 'admin' else 'shakha' end,
       case when is_primary_admin then 'all' else 'maha_admin' end,
       case when is_primary_admin then 'all' else 'shakha_admin_plan' end,
-      'active'
+      case when is_primary_admin then 'active' else 'inactive' end
     );
   end if;
 end;

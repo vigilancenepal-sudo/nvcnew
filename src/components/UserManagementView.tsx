@@ -8,7 +8,7 @@ import {
   getShakhaName,
   toNepaliDigits,
 } from '../data/nvcStructure';
-import { Plus, Pencil, Trash2, Check, X, ShieldCheck, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, ShieldCheck, Search, Clock, UserCheck, AlertCircle } from 'lucide-react';
 
 interface UserManagementViewProps {
   users: UserProfile[];
@@ -20,12 +20,14 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
   currentAdminUid,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | RoleLevel>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'pending' | RoleLevel>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  const pendingCount = users.filter((u) => u.status !== 'active').length;
 
   // Form states
   const [fullName, setFullName] = useState('');
@@ -184,7 +186,12 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
   };
 
   const filteredUsers = users.filter((u) => {
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesRole =
+      roleFilter === 'all'
+        ? true
+        : roleFilter === 'pending'
+        ? u.status !== 'active'
+        : u.role === roleFilter;
     const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -218,6 +225,25 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
           </button>
         </div>
 
+        {/* Pending Approval Alert Banner */}
+        {pendingCount > 0 && (
+          <div className="mt-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-950">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <span>
+                <strong>{toNepaliDigits(pendingCount)} जना नयाँ प्रयोगकर्ताको पहुँच स्वीकृति प्रतीक्षारत छ।</strong> कृपया पहिचान, पद र महाशाखा/शाखा रुजु गरी पहुँच प्रदान गर्नुहोस्।
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('pending')}
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-md text-[11px] transition-colors cursor-pointer"
+            >
+              स्वीकृति प्रतीक्षारत सूची हेर्नुहोस्
+            </button>
+          </div>
+        )}
+
         {feedbackMsg && (
           <div className="mt-4 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-between text-xs text-slate-800">
             <span>{feedbackMsg}</span>
@@ -248,6 +274,11 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
             {(
               [
                 { id: 'all', label: `सबै (${toNepaliDigits(users.length)})` },
+                {
+                  id: 'pending',
+                  label: `स्वीकृति प्रतीक्षारत (${toNepaliDigits(pendingCount)})`,
+                  isPending: true,
+                },
                 { id: 'admin', label: 'एडमिन' },
                 { id: 'mahashakha', label: 'महाशाखा तह' },
                 { id: 'shakha', label: 'शाखा तह' },
@@ -256,11 +287,15 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setRoleFilter(tab.id)}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                onClick={() => setRoleFilter(tab.id as any)}
+                className={`relative px-3 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   roleFilter === tab.id
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
+                } ${
+                  'isPending' in tab && tab.isPending && pendingCount > 0
+                    ? 'text-amber-800 font-semibold'
+                    : ''
                 }`}
               >
                 {tab.label}
@@ -332,16 +367,39 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                         )}
                       </td>
                       <td className="py-3 px-3">
-                        <button
-                          type="button"
-                          disabled={isSelf}
-                          onClick={() => handleQuickToggleStatus(u)}
-                          className={`text-xs font-medium underline-offset-2 hover:underline disabled:no-underline disabled:opacity-60 cursor-pointer ${
-                            u.status === 'active' ? 'text-emerald-700' : 'text-red-700'
-                          }`}
-                        >
-                          {u.status === 'active' ? 'सक्रिय (Active)' : 'निष्क्रिय (Inactive)'}
-                        </button>
+                        {u.status === 'active' ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check className="w-3 h-3" /> सक्रिय
+                            </span>
+                            {!isSelf && (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickToggleStatus(u)}
+                                className="text-[11px] text-slate-400 hover:text-red-700 underline cursor-pointer"
+                                title="खाता निष्क्रिय गरी पहुँच रोक्नुहोस्"
+                              >
+                                रोक्नुहोस्
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3" /> स्वीकृति बाँकी
+                            </span>
+                            {!isSelf && (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickToggleStatus(u)}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors cursor-pointer shadow-2xs"
+                                title="पहुँच स्वीकृत गरी प्रणाली सक्रिय बनाउनुहोस्"
+                              >
+                                <Check className="w-3.5 h-3.5" /> पहुँच दिनुहोस्
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5">
@@ -522,6 +580,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                   </select>
                 </div>
               )}
+
+              <div className="p-3 bg-blue-50/80 border border-blue-200/80 rounded-lg text-[11px] text-blue-950 leading-relaxed">
+                <strong>💡 पहुँच नीति:</strong> एडमिनले यहाँ कर्मचारीको आधिकारिक Google इमेल र पद, महाशाखा/शाखा तोकेर <strong>'सक्रिय'</strong> अवस्थामा दर्ता गरेपछि ती कर्मचारीले आफ्नो Google खाताबाट लगइन गर्दा सिधै ड्यासबोर्डमा प्रवेश पाउनेछन्। नयाँ अनधिकृत खाताहरू स्वतः <strong>'निष्क्रिय'</strong> अवस्थामा रहनेछन्।
+              </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button

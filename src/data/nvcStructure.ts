@@ -7,6 +7,14 @@ import {
   ComplaintStatus,
   FiscalYear,
 } from '../types/nvc';
+import {
+  NEPAL_MINISTRIES,
+  NEPAL_DISTRICTS_BY_PROVINCE,
+  getLocalLevelsFromNepalData,
+  getProvinceForDistrictFromNepalData,
+  NEPAL_DISTRICT_NAME_MAP,
+} from './nepalData';
+import { NepaliCalendar } from './nepaliCalendarApi';
 
 export const FISCAL_YEARS: { value: FiscalYear; labelNe: string }[] = [
   { value: '2083/84', labelNe: 'आ.व. २०८३/८४' },
@@ -14,7 +22,19 @@ export const FISCAL_YEARS: { value: FiscalYear; labelNe: string }[] = [
   { value: '2081/82', labelNe: 'आ.व. २०८१/८२' },
 ];
 
-export const NEPALI_YEARS = ['२०८३', '२०८२', '२०८१', '२०८०', '२०७९'];
+export const NEPALI_YEARS = [
+  '२०८०',
+  '२०८१',
+  '२०८२',
+  '२०८३',
+  '२०८४',
+  '२०८५',
+  '२०८६',
+  '२०८७',
+  '२०८८',
+  '२०८९',
+  '२०९०',
+];
 
 export const NEPALI_MONTHS = [
   'बैशाख',
@@ -27,12 +47,13 @@ export const NEPALI_MONTHS = [
   'मंसिर',
   'पौष',
   'माघ',
-  'फाल्गुन',
-  'चैत्र',
+  'फागुन',
+  'चैत',
 ];
 
 export const CURRENT_NEPALI_MONTH_INDEX = 7; // कार्तिक
-export const CURRENT_NEPALI_DATE_DISPLAY = '२०८३ कार्तिक १६, सोमबार';
+// आजको नेपाली मिति: २०८३ कार्तिक २२ गते आइतबार (Calculated via nepali-calendar-api.js)
+export const CURRENT_NEPALI_DATE_DISPLAY = '२०८३ कार्तिक २२ गते आइतबार';
 
 export const MAHASHAKHAS: MahashakhaDef[] = [
   {
@@ -368,18 +389,7 @@ export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
   chhanbin_ma: 'छानविनमा रहेको',
 };
 
-export const MINISTRIES_LIST = [
-  'भौतिक पूर्वाधार तथा यातायात मन्त्रालय',
-  'भूमि व्यवस्था, सहकारी तथा गरिबी निवारण मन्त्रालय',
-  'सङ्घीय मामिला तथा सामान्य प्रशासन मन्त्रालय',
-  'सहरी विकास मन्त्रालय',
-  'स्वास्थ्य तथा जनसङ्ख्या मन्त्रालय',
-  'शिक्षा, विज्ञान तथा प्रविधि मन्त्रालय',
-  'ऊर्जा, जलस्रोत तथा सिँचाइ मन्त्रालय',
-  'गृह मन्त्रालय',
-  'अर्थ मन्त्रालय',
-  'खानेपानी मन्त्रालय',
-];
+export const MINISTRIES_LIST = NEPAL_MINISTRIES;
 
 export const COMPLAINT_NATURES = [
   'निर्माण गुणस्तरहीन / प्राविधिक त्रुटि',
@@ -412,59 +422,37 @@ export const PROVINCES_DATA: ProvinceDef[] = [
   {
     id: 'koshi',
     nameNe: 'कोशी प्रदेश',
-    districtsEn: [
-      'Taplejung', 'Panchthar', 'Ilam', 'Jhapa', 'Morang', 'Sunsari',
-      'Dhankuta', 'Terhathum', 'Sankhuwasabha', 'Bhojpur', 'Solukhumbu',
-      'Okhaldhunga', 'Khotang', 'Udayapur',
-    ],
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[1] || [],
   },
   {
     id: 'madhesh',
-    nameNe: 'मधेश प्रदेश',
-    districtsEn: [
-      'Saptari', 'Siraha', 'Dhanusha', 'Mahottari', 'Sarlahi', 'Rautahat', 'Bara', 'Parsa',
-    ],
+    nameNe: 'मधेस प्रदेश',
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[2] || [],
   },
   {
     id: 'bagmati',
     nameNe: 'बागमती प्रदेश',
-    districtsEn: [
-      'Dolakha', 'Ramechhap', 'Sindhuli', 'Kabhrepalanchok', 'Sindhupalchok',
-      'Rasuwa', 'Nuwakot', 'Dhading', 'Chitawan', 'Makawanpur',
-      'Bhaktapur', 'Lalitpur', 'Kathmandu',
-    ],
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[3] || [],
   },
   {
     id: 'gandaki',
     nameNe: 'गण्डकी प्रदेश',
-    districtsEn: [
-      'Gorkha', 'Manang', 'Mustang', 'Myagdi', 'Kaski', 'Lamjung',
-      'Tanahu', 'Nawalparasi East', 'Syangja', 'Parbat', 'Baglung',
-    ],
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[4] || [],
   },
   {
     id: 'lumbini',
     nameNe: 'लुम्बिनी प्रदेश',
-    districtsEn: [
-      'Rukum East', 'Rolpa', 'Pyuthan', 'Gulmi', 'Arghakhanchi', 'Palpa',
-      'Nawalparasi West', 'Rupandehi', 'Kapilbastu', 'Dang', 'Banke', 'Bardiya',
-    ],
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[5] || [],
   },
   {
     id: 'karnali',
     nameNe: 'कर्णाली प्रदेश',
-    districtsEn: [
-      'Dolpa', 'Mugu', 'Humla', 'Jumla', 'Kalikot', 'Dailekh',
-      'Jajarkot', 'Rukum West', 'Salyan', 'Surkhet',
-    ],
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[6] || [],
   },
   {
     id: 'sudurpashchim',
-    nameNe: 'सुदूरपश्चिम प्रदेश',
-    districtsEn: [
-      'Bajura', 'Bajhang', 'Darchula', 'Baitadi', 'Dadeldhura',
-      'Doti', 'Achham', 'Kailali', 'Kanchanpur',
-    ],
+    nameNe: 'सुदूर पश्चिम प्रदेश',
+    districtsEn: NEPAL_DISTRICTS_BY_PROVINCE[7] || [],
   },
 ];
 
@@ -472,36 +460,28 @@ export const DISTRICT_LOCAL_LEVELS: Record<string, string[]> = {
   Kathmandu: ['काठमाडौँ महानगरपालिका', 'कीर्तिपुर नगरपालिका', 'बूढानीलकण्ठ नगरपालिका', 'चन्द्रागिरि नगरपालिका', 'टोखा नगरपालिका'],
   Lalitpur: ['ललितपुर महानगरपालिका', 'गोदावरी नगरपालिका', 'महालक्ष्मी नगरपालिका', 'कोन्ज्योसोम गाउँपालिका'],
   Bhaktapur: ['भक्तपुर नगरपालिका', 'मध्यपुर थिमी नगरपालिका', 'सूर्यविनायक नगरपालिका', 'चाँगुनारायण नगरपालिका'],
-  Bara: ['कलैया उपमहानगरपालिका', 'जीतपुरसिमरा उपमहानगरपालिका', 'कोल्हवी नगरपालिका', 'निजगढ नगरपालिका', 'प्रसौनी गाउँपालिका'],
-  Siraha: ['सिरहा नगरपालिका', 'लहान नगरपालिका', 'सुखिपुर नगरपालिका', 'गोलबजार नगरपालिका', 'भगवानपुर गाउँपालिका'],
-  Saptari: ['राजविराज नगरपालिका', 'खडक नगरपालिका', 'तिलाठी कोईलाडी गाउँपालिका', 'कञ्चनरुप नगरपालिका'],
-  Ilam: ['इलाम नगरपालिका', 'सूर्योदय नगरपालिका', 'देउमाई नगरपालिका', 'माईजोगमाई गाउँपालिका'],
-  Panchthar: ['फिदिम नगरपालिका', 'फालेलुङ गाउँपालिका', 'मिक्लाजुङ गाउँपालिका', 'हिलिहाङ गाउँपालिका'],
-  Mahottari: ['जलेश्वर नगरपालिका', 'बर्दिबास नगरपालिका', 'एकडारा गाउँपालिका', 'गौशाला नगरपालिका'],
-  Dhanusha: ['जनकपुरधाम उपमहानगरपालिका', 'क्षिरेश्वरनाथ नगरपालिका', 'मिथिला नगरपालिका', 'मुखियापट्टी मुसहरनिया गाउँपालिका'],
-  Kaski: ['पोखरा महानगरपालिका', 'अन्नपूर्ण गाउँपालिका', 'माछापुच्छ्रे गाउँपालिका', 'रूपा गाउँपालिका'],
-  Morang: ['विराटनगर महानगरपालिका', 'सुन्दरहरैंचा नगरपालिका', 'बेलबारी नगरपालिका', 'बुढीगंगा गाउँपालिका'],
-  Chitawan: ['भरतपुर महानगरपालिका', 'रत्ननगर नगरपालिका', 'खैरहनी नगरपालिका', 'इच्छाकामना गाउँपालिका'],
-  Rupandehi: ['बुटवल उपमहानगरपालिका', 'सिद्धार्थनगर नगरपालिका', 'तिलोत्तमा नगरपालिका', 'सैनामैना नगरपालिका'],
-  Kailali: ['धनगढी उपमहानगरपालिका', 'टीकापुर नगरपालिका', 'गोदावरी नगरपालिका', 'जानकी गाउँपालिका'],
-  Surkhet: ['वीरेन्द्रनगर नगरपालिका', 'भेरीगंगा नगरपालिका', 'गुर्भाकोट नगरपालिका', 'बराहताल गाउँपालिका'],
-  Parsa: ['वीरगञ्ज महानगरपालिका', 'पोखरिया नगरपालिका', 'पर्सागढी नगरपालिका', 'ठोरी गाउँपालिका'],
 };
 
 export function getLocalLevelsForDistrict(districtEn: string): string[] {
+  const fromData = getLocalLevelsFromNepalData(districtEn);
+  if (fromData && fromData.length > 0) {
+    return fromData;
+  }
   if (DISTRICT_LOCAL_LEVELS[districtEn]) {
     return DISTRICT_LOCAL_LEVELS[districtEn];
   }
   const ne = DISTRICT_NE_MAP[districtEn] || districtEn;
   return [
     `${ne} नगरपालिका`,
-    `${ne} सदरमुकाम नगरपालिका`,
-    `${ne} गाउँपालिका - १`,
-    `${ne} गाउँपालिका - २`,
+    `${ne} गाउँपालिका`,
   ];
 }
 
 export function getProvinceForDistrict(districtEn: string): string {
+  const fromData = getProvinceForDistrictFromNepalData(districtEn);
+  if (fromData) {
+    return fromData;
+  }
   const found = PROVINCES_DATA.find((p) => p.districtsEn.includes(districtEn));
   return found?.nameNe || 'बागमती प्रदेश';
 }
@@ -585,6 +565,18 @@ export const DISTRICT_NE_MAP: Record<string, string> = {
   Terhathum: 'तेह्रथुम',
   Udayapur: 'उदयपुर',
 };
+
+// Ensure all Nepali districts map to themselves and all nepalData English names are mapped
+for (const pNo in NEPAL_DISTRICTS_BY_PROVINCE) {
+  for (const d of NEPAL_DISTRICTS_BY_PROVINCE[pNo]) {
+    DISTRICT_NE_MAP[d] = d;
+  }
+}
+for (const [eng, nep] of Object.entries(NEPAL_DISTRICT_NAME_MAP)) {
+  DISTRICT_NE_MAP[eng] = nep;
+  const titleCase = eng.charAt(0).toUpperCase() + eng.slice(1).toLowerCase();
+  DISTRICT_NE_MAP[titleCase] = nep;
+}
 
 export function toNepaliDigits(value: number | string): string {
   const map: Record<string, string> = {

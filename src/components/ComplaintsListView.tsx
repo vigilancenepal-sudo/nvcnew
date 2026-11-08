@@ -360,37 +360,37 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
 
       {/* १. फिल्टरहरू Card matching complaint.pdf */}
       <div className="glass-panel rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Filter className="w-4 h-4 text-slate-700" />
+        <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+            <Filter className="w-3.5 h-3.5 text-slate-700" />
             <span>फिल्टरहरू</span>
           </div>
           <button
             type="button"
             onClick={() => setFilterExpanded((p) => !p)}
-            className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-600 transition-colors cursor-pointer"
+            className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors cursor-pointer"
             aria-label="फिल्टर खोल्नुहोस् वा बन्द गर्नुहोस्"
           >
             {filterExpanded ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-3.5 h-3.5" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
 
         {filterExpanded && (
-          <div className="p-5 space-y-4 text-xs">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="p-3 space-y-2 text-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {/* Column 1: मितिको दायरा (RANGE) */}
-              <div className="space-y-2.5 lg:pr-4 lg:border-r lg:border-slate-100">
-                <div className="font-bold text-slate-700">मितिको दायरा (RANGE)</div>
+              <div className="space-y-1.5 lg:pr-3 lg:border-r lg:border-slate-100">
+                <div className="font-bold text-slate-700 text-xs">मितिको दायरा (RANGE)</div>
 
                 <div className="flex items-center gap-1.5">
                   <select
                     value={fromYear}
                     onChange={(e) => setFromYear(e.target.value)}
-                    className="flex-1 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="flex-1 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">साल</option>
                     {NEPALI_YEARS.map((y) => (
@@ -402,7 +402,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   <select
                     value={fromMonth}
                     onChange={(e) => setFromMonth(e.target.value)}
-                    className="flex-1 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="flex-1 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">महिना</option>
                     {NEPALI_MONTHS.map((m, idx) => (
@@ -414,7 +414,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   <select
                     value={fromDay}
                     onChange={(e) => setFromDay(e.target.value)}
-                    className="w-18 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="w-18 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">गते</option>
                     {Array.from({ length: 32 }, (_, i) => i + 1).map((d) => (
@@ -423,14 +423,14 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                       </option>
                     ))}
                   </select>
-                  <span className="text-slate-500 shrink-0">देखि</span>
+                  <span className="text-slate-500 shrink-0 text-xs">देखि</span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <select
                     value={toYear}
                     onChange={(e) => setToYear(e.target.value)}
-                    className="flex-1 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="flex-1 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">साल</option>
                     {NEPALI_YEARS.map((y) => (
@@ -442,7 +442,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   <select
                     value={toMonth}
                     onChange={(e) => setToMonth(e.target.value)}
-                    className="flex-1 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="flex-1 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">महिना</option>
                     {NEPALI_MONTHS.map((m, idx) => (
@@ -454,7 +454,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   <select
                     value={toDay}
                     onChange={(e) => setToDay(e.target.value)}
-                    className="w-18 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                    className="w-18 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                   >
                     <option value="">गते</option>
                     {Array.from({ length: 32 }, (_, i) => i + 1).map((d) => (
@@ -463,13 +463,13 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                       </option>
                     ))}
                   </select>
-                  <span className="text-slate-500 shrink-0">सम्म</span>
+                  <span className="text-slate-500 shrink-0 text-xs">सम्म</span>
                 </div>
               </div>
 
               {/* Column 2: विवरण */}
-              <div className="space-y-2.5 lg:pr-4 lg:border-r lg:border-slate-100">
-                <div className="font-bold text-slate-700">विवरण</div>
+              <div className="space-y-1.5 lg:pr-3 lg:border-r lg:border-slate-100">
+                <div className="font-bold text-slate-700 text-xs">विवरण</div>
 
                 <select
                   value={statusFilter}
@@ -477,7 +477,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="all">स्थिति (सबै)</option>
                   {Object.entries(COMPLAINT_STATUS_LABELS).map(([k, lbl]) => (
@@ -493,7 +493,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                     setDecisionFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="all">केन्द्रको निर्णय (सबै)</option>
                   <option value="has_decision">समितिको निर्णय भइसकेको</option>
@@ -507,7 +507,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                     setShakhaFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="all">शाखा (सबै)</option>
                   {SHAKHAS.map((s) => (
@@ -523,7 +523,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                     setMinistryFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="all">मन्त्रालय/निकाय (सबै)</option>
                   {MINISTRIES_LIST.map((m) => (
@@ -535,13 +535,13 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
               </div>
 
               {/* Column 3: खोजी र क्रम */}
-              <div className="space-y-2.5">
-                <div className="font-bold text-slate-700">खोजी र क्रम</div>
+              <div className="space-y-1.5">
+                <div className="font-bold text-slate-700 text-xs">खोजी र क्रम</div>
 
                 <select
                   value={sortField}
                   onChange={(e) => setSortField(e.target.value as 'nepaliDate' | 'dartaNo')}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="nepaliDate">दर्ता मिति</option>
                   <option value="dartaNo">दर्ता नं</option>
@@ -550,7 +550,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md bg-white text-slate-800"
+                  className="w-full px-2.5 py-1 border border-slate-200 rounded-md bg-white text-slate-800 text-xs"
                 >
                   <option value="desc">नयाँ -&gt; पुरानो</option>
                   <option value="asc">पुरानो -&gt; नयाँ</option>
@@ -560,7 +560,7 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                   <select
                     value={searchScope}
                     onChange={(e) => setSearchScope(e.target.value as SearchScope)}
-                    className="w-28 px-2 py-2 border border-slate-200 rounded-md bg-white text-slate-800 shrink-0"
+                    className="w-24 px-2 py-1 border border-slate-200 rounded-md bg-white text-slate-800 shrink-0 text-xs"
                   >
                     <option value="all">सबै</option>
                     <option value="dartaNo">दर्ता नं</option>
@@ -576,37 +576,37 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
                       setCurrentPage(1);
                     }}
                     placeholder="खोज्नुहोस्..."
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-md text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-800"
+                    className="flex-1 px-2.5 py-1 border border-slate-200 rounded-md text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-800 text-xs"
                   />
                 </div>
               </div>
             </div>
 
             {/* Filter Footer Actions */}
-            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setCurrentPage(1)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition-colors cursor-pointer text-xs"
                 >
-                  <Search className="w-3.5 h-3.5" />
+                  <Search className="w-3 h-3" />
                   <span>खोज्नुहोस्</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-md transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-md transition-colors cursor-pointer text-xs"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                   <span>रिसेट</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveFilterPreset}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-blue-200 text-blue-800 hover:bg-blue-50 font-medium rounded-md transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-blue-200 text-blue-800 hover:bg-blue-50 font-medium rounded-md transition-colors cursor-pointer text-xs"
                 >
-                  <Save className="w-3.5 h-3.5" />
+                  <Save className="w-3 h-3" />
                   <span>फिल्टर सेभ</span>
                 </button>
               </div>
@@ -614,9 +614,9 @@ export const ComplaintsListView: React.FC<ComplaintsListViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportExcelCsv}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 font-medium rounded-md transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 font-medium rounded-md transition-colors cursor-pointer text-xs"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <FileSpreadsheet className="w-3 h-3" />
                 <span>Excel</span>
               </button>
             </div>

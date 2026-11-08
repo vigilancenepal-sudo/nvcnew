@@ -275,7 +275,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
     // 13 Complaint Stat Cards
     const cStats: StatItem[] = [
-      { key: 'total', label: 'कूल उजुरी (ऐतिहासिक)', value: totalAll, highlight: 'navy' },
+      { key: 'total', label: 'कुल उजुरी', value: totalAll, highlight: 'navy' },
       { key: 'prev_fy', label: 'गत आ.व.को जिम्मेवारी', value: prevFyCount },
       { key: 'curr_fy', label: 'चालु आ.व.मा दर्ता', value: currFyCount, highlight: 'navy' },
       { key: 'chalu', label: 'चालु उजुरीहरु', value: chaluCnt },
@@ -292,9 +292,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
     // 9 Monitoring & Core Activity Stat Cards
     const mStats: StatItem[] = [
-      { key: 'total_mon', label: 'कूल कार्यालय अनुगमन', value: officeMonAll.length, highlight: 'navy' },
-      { key: 'total_noncomp', label: 'कूल अपरिपालना संख्या', value: totalNonCompliance, highlight: 'crimson' },
-      { key: 'total_dir', label: 'कूल निर्देशन संख्या', value: totalDirectives },
+      { key: 'total_mon', label: 'कुल कार्यालय अनुगमन', value: officeMonAll.length, highlight: 'navy' },
+      { key: 'total_noncomp', label: 'कुल अपरिपालना संख्या', value: totalNonCompliance, highlight: 'crimson' },
+      { key: 'total_dir', label: 'कुल निर्देशन संख्या', value: totalDirectives },
       { key: 'month_mon', label: 'यस महिनाको अनुगमन', value: officeMonThisMonth.length },
       { key: 'month_noncomp', label: 'यस महिनाको अपरिपालना', value: monthNonCompliance },
       { key: 'month_dir', label: 'यस महिनाको निर्देशन', value: monthDirectives },
@@ -307,7 +307,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     const tStats: StatItem[] = [
       {
         key: 'extra_total_proj',
-        label: 'कूल आयोजना अनुगमन',
+        label: 'कुल आयोजना अनुगमन',
         value: activities.filter((a) => a.activityType === 'aayojana_anugaman').length,
         highlight: 'navy',
       },
@@ -319,7 +319,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       },
       {
         key: 'extra_total_tech',
-        label: 'कूल प्राविधिक परीक्षण',
+        label: 'कुल प्राविधिक परीक्षण',
         value: activities.filter((a) => a.activityType === 'prabidhik_parikshan').length,
         highlight: 'navy',
       },
@@ -456,10 +456,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
 
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-blue-950">
-              राष्ट्रिय सतर्कता केन्द्र — एकीकृत सुशासन तथा अनुगमन प्रणाली
+              राष्ट्रिय सतर्कता केन्द्र — उजुरी व्यवस्थापन तथा अनुगमन प्रणाली
             </h1>
             <p className="text-xs sm:text-[13px] text-slate-600 leading-relaxed">
-              भ्रष्टाचार निवारण ऐन, २०५९ बमोजिम सरकारी निकायहरूको नियमित तथा छड्के अनुगमन, उजुरी छानविन, नागरिक बडापत्र परिपालना र सार्वजनिक पूर्वाधार आयोजनाहरूको प्राविधिक परीक्षण।
+              भ्रष्टाचार निवारण ऐन, २०५९ बमोजिम सार्वजनिक संस्थाहरुको अनुगमन, उजुरी छानविन, विकास आयोजनाहरूको अनुगमन र प्राविधिक परीक्षण।
             </p>
           </div>
 
@@ -522,7 +522,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           <div className="bg-white/70 backdrop-blur-sm border border-slate-200/70 rounded-xl p-3 shadow-2xs">
-            <span className="text-[11px] font-medium text-slate-500">छड्के कार्यालय अनुगमन</span>
+            <span className="text-[11px] font-medium text-slate-500">कार्यालय अनुगमन</span>
             <div className="text-xl sm:text-2xl font-bold font-mono-num text-blue-900 mt-0.5">
               {toNepaliDigits(totalOfficeMonCount)}
             </div>
@@ -530,7 +530,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           <div className="bg-white/70 backdrop-blur-sm border border-slate-200/70 rounded-xl p-3 shadow-2xs">
-            <span className="text-[11px] font-medium text-slate-500">प्राविधिक परीक्षण ( पूर्वाधार )</span>
+            <span className="text-[11px] font-medium text-slate-500">प्राविधिक परीक्षण</span>
             <div className="text-xl sm:text-2xl font-bold font-mono-num text-indigo-950 mt-0.5">
               {toNepaliDigits(totalTechAuditCount)}
             </div>
@@ -730,10 +730,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${isFarchhaut
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : isPending
-                                ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : isPending
+                              ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                              : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}
                         >
                           {COMPLAINT_STATUS_LABELS[c.status]}

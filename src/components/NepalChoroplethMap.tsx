@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { geoMercator, geoPath } from 'd3-geo';
+import React, { useMemo, useState, useRef } from 'react';
+import { geoMercator, geoPath, geoArea } from 'd3-geo';
 import nepalGeoJsonRaw from '../data/nepal77Districts.json';
 import { DISTRICT_NE_MAP, toNepaliDigits } from '../data/nvcStructure';
 import { MapPin, RotateCcw } from 'lucide-react';
@@ -42,7 +42,7 @@ const PROVINCE_NAMES_NE: Record<string, string> = {
 
 function getFillColor(count: number, maxCount: number, isSelected: boolean): string {
   if (isSelected) return '#b91c1c'; // Sovereign crimson highlight for selected district
-  if (count === 0) return '#f1f5f9';
+  if (count === 0) return '#f8fafc';
   const ratio = maxCount > 0 ? count / maxCount : 0;
   if (ratio <= 0.2) return '#dbeafe';
   if (ratio <= 0.45) return '#93c5fd';
@@ -50,22 +50,43 @@ function getFillColor(count: number, maxCount: number, isSelected: boolean): str
   return '#1e3a8a';
 }
 
+function rewindGeometry(geom: any): any {
+  if (!geom || !geom.coordinates) return geom;
+  if (geom.type === 'Polygon') {
+    return {
+      ...geom,
+      coordinates: geom.coordinates.map((ring: any[]) => ring.slice().reverse()),
+    };
+  }
+  if (geom.type === 'MultiPolygon') {
+    return {
+      ...geom,
+      coordinates: geom.coordinates.map((poly: any[][]) =>
+        poly.map((ring: any[]) => ring.slice().reverse())
+      ),
+    };
+  }
+  return geom;
+}
+
 export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
   districtCounts,
   selectedDistrict,
   onSelectDistrict,
-  title = 'जिल्लागत उजुरी वितरण नक्सा (७७ जिल्ला GeoJSON Choropleth)',
-  subtitle = 'जिल्लामा क्लिक गरी सो जिल्लाका उजुरीहरू फिल्टर गर्नुहोस् · कूल ७७ जिल्ला समावेश',
+  title = 'जिल्लागत उजुरी वितरण नक्सा',
+  subtitle = 'जिल्लामा क्लिक गरी विवरण फिल्टर गर्नुहोस्',
   entityLabel = 'उजुरी',
   entityPlural = 'उजुरी',
   emptyMessage = 'कुनै उजुरी दर्ता भएको छैन।',
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredDistrict, setHoveredDistrict] = useState<{
     en: string;
     ne: string;
     province: string;
     count: number;
   } | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   const geoData = nepalGeoJsonRaw as unknown as GeoCollection;
 
@@ -73,12 +94,33 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
     const width = 760;
     const height = 400;
 
+    // Ensure all features have counter-clockwise outer rings (area <= 2*PI steradians)
+    const sanitizedFeatures = geoData.features.map((feature) => {
+      try {
+        const area = geoArea(feature as any);
+        if (area > 2 * Math.PI) {
+          return {
+            ...feature,
+            geometry: rewindGeometry(feature.geometry),
+          };
+        }
+      } catch {
+        // keep feature if calculation fails
+      }
+      return feature;
+    });
+
+    const sanitizedCollection = {
+      type: 'FeatureCollection',
+      features: sanitizedFeatures,
+    };
+
     const projection = geoMercator().fitExtent(
       [
         [18, 18],
         [width - 18, height - 18],
       ],
-      geoData as any
+      sanitizedCollection as any
     );
     const pathGenerator = geoPath().projection(projection);
 
@@ -87,7 +129,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
       if (val > max) max = val;
     });
 
-    const computedPaths = geoData.features.map((feature) => {
+    const computedPaths = sanitizedFeatures.map((feature) => {
       const distEn = feature.properties.DIST_EN;
       const d = pathGenerator(feature as any) || '';
       const centroid = pathGenerator.centroid(feature as any);
@@ -115,15 +157,35 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
 
   const activeInfo = hoveredDistrict || (selectedDistrict
     ? {
-        en: selectedDistrict,
-        ne: DISTRICT_NE_MAP[selectedDistrict] || selectedDistrict,
-        province:
-          PROVINCE_NAMES_NE[
-            paths.find((p) => p.distEn === selectedDistrict)?.provinceCode || ''
-          ] || '',
-        count: districtCounts[selectedDistrict] || 0,
-      }
+      en: selectedDistrict,
+      ne: DISTRICT_NE_MAP[selectedDistrict] || selectedDistrict,
+      province:
+        PROVINCE_NAMES_NE[
+        paths.find((p) => p.distEn === selectedDistrict || p.distNe === selectedDistrict)?.provinceCode || ''
+        ] || '',
+      count:
+        districtCounts[selectedDistrict] ||
+        districtCounts[DISTRICT_NE_MAP[selectedDistrict] || ''] ||
+        0,
+    }
     : null);
+
+  const hoveredPathItem = hoveredDistrict
+    ? paths.find((p) => p.distEn === hoveredDistrict.en)
+    : null;
+  const selectedPathItem = selectedDistrict
+    ? paths.find((p) => p.distEn === selectedDistrict || p.distNe === selectedDistrict)
+    : null;
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
 
   return (
     <div className="glass-panel rounded-2xl p-5 flex flex-col justify-between border border-slate-200/90 shadow-xs">
@@ -164,18 +226,49 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-center pt-3">
-        <div className="xl:col-span-9 relative bg-slate-50/70 border border-slate-200/70 rounded-md overflow-hidden">
+        <div
+          ref={containerRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => {
+            setHoveredDistrict(null);
+            setMousePos(null);
+          }}
+          className="xl:col-span-9 relative bg-slate-50/80 border border-slate-200 rounded-lg overflow-hidden min-h-[300px]"
+        >
+          {/* Floating Tooltip */}
+          {hoveredDistrict && mousePos && (
+            <div
+              className="pointer-events-none absolute z-30 px-3 py-1.5 rounded-lg bg-slate-900/95 text-white text-xs shadow-xl backdrop-blur-xs border border-slate-700 transform -translate-x-1/2 -translate-y-full transition-all duration-75"
+              style={{ left: Math.max(70, Math.min(mousePos.x, (containerRef.current?.clientWidth || 700) - 70)), top: Math.max(40, mousePos.y - 12) }}
+            >
+              <div className="font-semibold flex items-center gap-1.5 whitespace-nowrap">
+                <span>{hoveredDistrict.ne}</span>
+                <span className="text-slate-400 font-normal text-[11px]">({hoveredDistrict.en})</span>
+              </div>
+              <div className="text-[11px] text-slate-300 flex items-center justify-between gap-3 mt-0.5 whitespace-nowrap">
+                <span>{hoveredDistrict.province}</span>
+                <span className="font-semibold text-blue-300">
+                  {toNepaliDigits(hoveredDistrict.count)} {entityLabel}
+                </span>
+              </div>
+            </div>
+          )}
+
           <svg
             viewBox="0 0 760 400"
-            className="w-full h-auto max-h-[380px] select-none"
+            className="w-full h-auto max-h-[380px] select-none block"
             role="img"
             aria-label={`नेपालको ७७ जिल्लाको ${entityPlural} नक्सा`}
           >
+            {/* Base Districts */}
             <g>
               {paths.map((item) => {
-                const count = districtCounts[item.distEn] || 0;
-                const isSelected = selectedDistrict === item.distEn;
-                const isHovered = hoveredDistrict?.en === item.distEn;
+                const count =
+                  districtCounts[item.distEn] ||
+                  districtCounts[item.distNe] ||
+                  (item.distEn.toUpperCase() in districtCounts ? districtCounts[item.distEn.toUpperCase()] : 0) ||
+                  0;
+                const isSelected = selectedDistrict === item.distEn || selectedDistrict === item.distNe;
                 const fill = getFillColor(count, maxCount, isSelected);
 
                 return (
@@ -183,9 +276,9 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
                     key={item.distEn}
                     d={item.d}
                     fill={fill}
-                    stroke={isSelected ? '#7f1d1d' : isHovered ? '#0f172a' : '#64748b'}
-                    strokeWidth={isSelected ? 1.6 : isHovered ? 1.2 : 0.55}
-                    className="transition-colors duration-150 cursor-pointer"
+                    stroke="#94a3b8"
+                    strokeWidth={0.65}
+                    className="transition-colors duration-150 cursor-pointer hover:brightness-95"
                     onMouseEnter={() =>
                       setHoveredDistrict({
                         en: item.distEn,
@@ -194,7 +287,6 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
                         count,
                       })
                     }
-                    onMouseLeave={() => setHoveredDistrict(null)}
                     onClick={() =>
                       onSelectDistrict(isSelected ? null : item.distEn)
                     }
@@ -206,6 +298,28 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
                 );
               })}
             </g>
+
+            {/* Selected District Highlight Overlay (drawn on top to prevent stroke clipping) */}
+            {selectedPathItem && (
+              <path
+                d={selectedPathItem.d}
+                fill="#b91c1c"
+                stroke="#7f1d1d"
+                strokeWidth={2}
+                className="pointer-events-none drop-shadow-sm"
+              />
+            )}
+
+            {/* Hovered District Highlight Overlay (drawn on top) */}
+            {hoveredPathItem && hoveredPathItem.distEn !== selectedPathItem?.distEn && (
+              <path
+                d={hoveredPathItem.d}
+                fill="none"
+                stroke="#1d4ed8"
+                strokeWidth={1.8}
+                className="pointer-events-none"
+              />
+            )}
           </svg>
 
           {/* Choropleth Legend */}
@@ -213,7 +327,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
             <div className="flex items-center gap-3">
               <span className="font-medium text-slate-700">{entityLabel} घनत्व:</span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-3 h-3 rounded-xs bg-[#f1f5f9] border border-slate-300" />
+                <span className="w-3 h-3 rounded-xs bg-[#f8fafc] border border-slate-300" />
                 ०
               </span>
               <span className="inline-flex items-center gap-1">
@@ -257,11 +371,10 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
                       key={d.en}
                       type="button"
                       onClick={() => onSelectDistrict(active ? null : d.en)}
-                      className={`w-full py-2 px-2 flex items-center justify-between text-left text-xs rounded transition-colors cursor-pointer ${
-                        active
-                          ? 'bg-red-50 text-red-900 font-semibold'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
+                      className={`w-full py-2 px-2 flex items-center justify-between text-left text-xs rounded transition-colors cursor-pointer ${active
+                        ? 'bg-red-50 text-red-900 font-semibold'
+                        : 'hover:bg-slate-50 text-slate-700'
+                        }`}
                     >
                       <span className="flex items-center gap-2 truncate">
                         <span className="text-slate-400 font-mono-num w-4">
@@ -281,7 +394,7 @@ export const NepalChoroplethMap: React.FC<NepalChoroplethMapProps> = ({
           </div>
 
           <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed">
-            नक्सामा देखाइएका तथ्याङ्क हाल लगइन गरिएको तह र छनौट गरिएको आर्थिक वर्षको अधिकार क्षेत्रभित्रका {entityPlural} मा आधारित छन्।
+            नक्सामा देखाइएका तथ्याङ्क हाल लगइन गरिएको तह र छनौट गरिएको आर्थिक वर्षका {entityPlural} मा आधारित छन्।
           </div>
         </div>
       </div>

@@ -33,6 +33,7 @@ import {
   FISCAL_YEARS,
   getLocalLevelsForDistrict,
   getProvinceForDistrict,
+  NEPALI_YEARS,
   NEPALI_MONTHS,
   PROVINCES_DATA,
   MAHASHAKHAS,
@@ -46,7 +47,6 @@ import { NepaliDatePicker } from './NepaliDatePicker';
 
 const ATTACHMENT_BUCKET = 'activity-attachments';
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
-const NEPALI_YEARS = ['२०८१', '२०८२', '२०८३', '२०८४', '२०८५'];
 const STATUS_OPTIONS: Array<{
   value: PromotionalProgramDetails['status'];
   label: string;
